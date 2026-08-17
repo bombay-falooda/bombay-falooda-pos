@@ -74,6 +74,10 @@ textarea {
   display: none;
 }
 
+.print-ticket {
+  display: none;
+}
+
 @media print {
   @page {
     margin: 0;
