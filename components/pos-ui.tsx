@@ -37,9 +37,78 @@ export function StatusPill({ value }: { value: string }) {
   );
 }
 
+export function ThermalBillReceipt({ bill }: { bill: Bill }) {
+  return (
+    <div className="print-ticket hidden">
+      <div className="text-center pb-2 border-b border-black mb-2">
+        <img
+          src="/bombay-logo.png"
+          alt="Bombay Falooda"
+          className="print-logo mx-auto h-12 w-12 object-contain mb-1"
+        />
+        <h2 className="text-sm font-black uppercase tracking-wider">BOMBAY FALOODA</h2>
+        <p className="text-[10px] font-bold">Store Outlet Terminal</p>
+      </div>
+
+      <div className="text-[10px] space-y-0.5 border-b border-black pb-2 mb-2">
+        <div className="flex justify-between font-bold">
+          <span>Bill: {bill.billNumber}</span>
+          <span>{bill.orderType?.replace("_", " ") || "TAKEAWAY"}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Date: {formatDate(bill.createdAt)}</span>
+          <span>Pay: {bill.paymentMethod || "CASH"}</span>
+        </div>
+        <p>Customer: {bill.customerName || "Walk-in"} {bill.customerPhone ? `(${bill.customerPhone})` : ""}</p>
+      </div>
+
+      <table className="w-full text-[10px] text-left border-b border-black pb-2 mb-2">
+        <thead>
+          <tr className="border-b border-black text-xs font-bold">
+            <th className="py-1">Item</th>
+            <th className="py-1 text-center">Qty</th>
+            <th className="py-1 text-right">Amt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bill.items.map((item) => (
+            <tr key={item.id} className="border-b border-gray-300/50">
+              <td className="py-1 font-bold">
+                {item.name}
+                {item.addons?.length ? (
+                  <span className="block text-[8px] font-normal text-gray-700">
+                    + {item.addons.map((a) => a.name).join(", ")}
+                  </span>
+                ) : null}
+              </td>
+              <td className="py-1 text-center">{item.quantity}</td>
+              <td className="py-1 text-right font-bold">₹{Number(item.total).toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="text-[11px] font-black space-y-1 text-right border-b border-black pb-2 mb-2">
+        <div className="flex justify-between">
+          <span>Total Payable:</span>
+          <span className="text-sm">INR {Number(bill.total).toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div className="text-center text-[10px] pt-1 font-bold">
+        <p>Thank you for visiting Bombay Falooda!</p>
+        <p className="text-[8px] font-normal mt-0.5">Please visit again 🍨</p>
+      </div>
+    </div>
+  );
+}
+
 export function BillDetail({ bill }: { bill: Bill }) {
   return (
     <div className="space-y-3">
+      {/* 80mm Thermal Receipt Ticket for Printer */}
+      <ThermalBillReceipt bill={bill} />
+
       <div className="rounded-[18px] bg-[#17110f] p-4 text-white">
         <div className="flex items-start justify-between gap-4">
           <div>
