@@ -91,13 +91,28 @@ textarea {
     padding: 0 !important;
   }
 
-  .no-print,
   main,
+  section {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
   header,
   aside,
-  section,
   nav,
-  .pos-panel {
+  .pos-panel,
+  .no-print,
+  button,
+  input,
+  textarea,
+  select {
     display: none !important;
   }
 
@@ -108,7 +123,7 @@ textarea {
   }
 
   .print-ticket {
-    position: absolute !important;
+    position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     width: 76mm !important;
