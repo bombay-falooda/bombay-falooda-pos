@@ -93,6 +93,9 @@ export type Bill = {
   id: string;
   billNumber: string;
   status: "HELD" | "FINALIZED" | "CANCELLED";
+  orderType?: string | null;
+  paymentMethod?: string | null;
+  createdAt?: string | null;
   customerName?: string | null;
   customerPhone?: string | null;
   customerEmail?: string | null;
