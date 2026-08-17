@@ -39,7 +39,7 @@ export function StatusPill({ value }: { value: string }) {
 
 export function ThermalBillReceipt({ bill }: { bill: Bill }) {
   return (
-    <div className="print-ticket">
+    <div id="print-ticket-root" className="print-ticket">
       <div className="text-center pb-2 border-b border-black mb-2">
         <img
           src="/bombay-logo.png"

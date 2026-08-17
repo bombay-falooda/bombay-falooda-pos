@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { PosShell } from "@/components/pos-shell";
-import { BillDetail, OrderCard, money, pillClass } from "@/components/pos-ui";
+import { BillDetail, OrderCard, ThermalBillReceipt, money, pillClass } from "@/components/pos-ui";
 import {
   apiRequest,
   type AcceptedDigitalOrder,
@@ -209,8 +209,33 @@ export default function PosTerminalPage() {
     });
   }
 
+  const currentThermalBill: Bill | null = activeBill || (cart.length ? {
+    id: "draft",
+    billNumber: "COUNTER-BILL",
+    status: "HELD",
+    subtotal: activeTotal,
+    discount: Number(discount || 0),
+    total: payableTotal,
+    customerName: "Walk-in Customer",
+    customerPhone: customerPhone || undefined,
+    paymentMethod: paymentMethod,
+    orderType: "TAKEAWAY",
+    createdAt: new Date().toISOString(),
+    items: cart.map((c, i) => ({
+      id: String(i),
+      name: c.name,
+      quantity: c.quantity,
+      unitPrice: c.unitPrice,
+      total: c.unitPrice * c.quantity,
+      addons: c.addons.map((a) => ({ addonId: a.addonId, name: a.name, price: a.price })),
+    })),
+    kotTickets: [],
+    payments: [],
+  } : null);
+
   return (
     <PosShell>
+      {currentThermalBill ? <ThermalBillReceipt bill={currentThermalBill} /> : null}
       {(message || error) && (
         <div className="no-print fixed left-1/2 top-5 z-50 -translate-x-1/2 rounded-2xl border border-[#eadbd1] bg-white px-6 py-3 text-center text-sm font-bold shadow-2xl">
           <p className={error ? "text-red-600" : "text-[#0f766e]"}>{error || message}</p>

@@ -91,57 +91,61 @@ textarea {
     padding: 0 !important;
   }
 
-  main,
-  section {
-    display: block !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    min-height: auto !important;
-    height: auto !important;
-  }
-
-  header,
-  aside,
-  nav,
-  .pos-panel,
-  .no-print,
-  button,
-  input,
-  textarea,
-  select {
+  /* Hide everything on the page */
+  body * {
     display: none !important;
   }
 
-  .print-ticket,
-  .print-ticket * {
+  /* Show ONLY #print-ticket-root and its children */
+  #print-ticket-root,
+  #print-ticket-root * {
     display: block !important;
     visibility: visible !important;
   }
 
-  .print-ticket {
+  #print-ticket-root {
     position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     width: 76mm !important;
     margin: 0 !important;
-    padding: 2mm !important;
+    padding: 3mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: monospace, Arial, sans-serif !important;
     font-size: 11px !important;
     line-height: 1.35 !important;
-    z-index: 999999 !important;
+    z-index: 99999999 !important;
   }
 
-  .print-logo {
+  #print-ticket-root table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #print-ticket-root thead {
+    display: table-header-group !important;
+  }
+
+  #print-ticket-root tbody {
+    display: table-row-group !important;
+  }
+
+  #print-ticket-root tr {
+    display: table-row !important;
+  }
+
+  #print-ticket-root th,
+  #print-ticket-root td {
+    display: table-cell !important;
+  }
+
+  #print-ticket-root img {
     display: block !important;
-    height: 16mm !important;
     margin: 0 auto 2mm !important;
-    object-fit: contain !important;
+    height: 16mm !important;
     width: 16mm !important;
+    object-fit: contain !important;
   }
 }
