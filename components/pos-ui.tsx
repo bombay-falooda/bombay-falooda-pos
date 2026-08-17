@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Bill, DigitalOrder, KotTicket } from "@/lib/api";
 
 export function money(value: number) {
@@ -38,7 +40,15 @@ export function StatusPill({ value }: { value: string }) {
 }
 
 export function ThermalBillReceipt({ bill }: { bill: Bill }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <div id="print-ticket-root" className="print-ticket">
       <div className="text-center pb-2 border-b border-black mb-2">
         <img
@@ -99,7 +109,8 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
         <p>Thank you for visiting Bombay Falooda!</p>
         <p className="text-[8px] font-normal mt-0.5">Please visit again 🍨</p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
