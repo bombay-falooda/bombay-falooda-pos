@@ -101,7 +101,7 @@ export default function PosTeamMembersPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+      <main className="flex-1 w-full mx-auto p-4 md:p-6 space-y-6">
         {error && (
           <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
             {error}

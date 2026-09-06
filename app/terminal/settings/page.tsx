@@ -175,7 +175,7 @@ export default function PosSettingsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+      <main className="flex-1 w-full mx-auto p-4 md:p-6 space-y-6">
         {message && (
           <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -216,14 +216,12 @@ export default function PosSettingsPage() {
                 <button
                   type="button"
                   onClick={handleToggle2FA}
-                  className={`w-12 h-6 rounded-full p-1 transition duration-200 ease-in-out ${
-                    twoFactorEnabled ? "bg-emerald-600" : "bg-slate-300"
-                  }`}
+                  className={`w-12 h-6 rounded-full p-1 transition duration-200 ease-in-out ${twoFactorEnabled ? "bg-emerald-600" : "bg-slate-300"
+                    }`}
                 >
                   <div
-                    className={`w-4 h-4 rounded-full bg-white transition transform ${
-                      twoFactorEnabled ? "translate-x-6" : "translate-x-0"
-                    }`}
+                    className={`w-4 h-4 rounded-full bg-white transition transform ${twoFactorEnabled ? "translate-x-6" : "translate-x-0"
+                      }`}
                   />
                 </button>
               </div>
@@ -285,11 +283,10 @@ export default function PosSettingsPage() {
                   <button
                     type="button"
                     onClick={() => setAutoCut(!autoCut)}
-                    className={`w-full h-9 rounded-lg border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                      autoCut
+                    className={`w-full h-9 rounded-lg border text-xs font-bold transition flex items-center justify-center gap-1.5 ${autoCut
                         ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                         : "bg-slate-100 text-slate-600 border-slate-300"
-                    }`}
+                      }`}
                   >
                     {autoCut ? <Check className="h-4 w-4 stroke-[3]" /> : <X className="h-4 w-4" />}
                     <span>{autoCut ? "Auto-Cut Enabled" : "Manual Cut"}</span>

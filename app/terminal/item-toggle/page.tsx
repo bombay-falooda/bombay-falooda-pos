@@ -153,7 +153,7 @@ export default function PosItemTogglePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-4">
+      <main className="flex-1 w-full mx-auto p-4 md:p-6 space-y-4">
         {toast && (
           <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -184,11 +184,10 @@ export default function PosItemTogglePage() {
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
-                selectedCategory === "all"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${selectedCategory === "all"
                   ? "bg-[#b82e46] text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               All Categories
             </button>
@@ -197,11 +196,10 @@ export default function PosItemTogglePage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
-                  selectedCategory === cat
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${selectedCategory === cat
                     ? "bg-[#b82e46] text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -237,11 +235,10 @@ export default function PosItemTogglePage() {
                       <button
                         type="button"
                         onClick={() => toggleChannel(item.id, "pos")}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${
-                          item.channels.pos
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${item.channels.pos
                             ? "bg-emerald-100 text-emerald-800"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.channels.pos ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3" />}
                         <span>{item.channels.pos ? "POS ON" : "POS OFF"}</span>
@@ -253,11 +250,10 @@ export default function PosItemTogglePage() {
                       <button
                         type="button"
                         onClick={() => toggleChannel(item.id, "website")}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${
-                          item.channels.website
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${item.channels.website
                             ? "bg-blue-100 text-blue-800"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.channels.website ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3" />}
                         <span>{item.channels.website ? "WEB ON" : "WEB OFF"}</span>
@@ -269,11 +265,10 @@ export default function PosItemTogglePage() {
                       <button
                         type="button"
                         onClick={() => toggleChannel(item.id, "zomato")}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${
-                          item.channels.zomato
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${item.channels.zomato
                             ? "bg-rose-100 text-rose-800"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.channels.zomato ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3" />}
                         <span>{item.channels.zomato ? "ZOMATO ON" : "OFF"}</span>
@@ -285,11 +280,10 @@ export default function PosItemTogglePage() {
                       <button
                         type="button"
                         onClick={() => toggleChannel(item.id, "swiggy")}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${
-                          item.channels.swiggy
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${item.channels.swiggy
                             ? "bg-amber-100 text-amber-800"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.channels.swiggy ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3" />}
                         <span>{item.channels.swiggy ? "SWIGGY ON" : "OFF"}</span>
@@ -301,11 +295,10 @@ export default function PosItemTogglePage() {
                       <button
                         type="button"
                         onClick={() => toggleChannel(item.id, "easycater")}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${
-                          item.channels.easycater
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1 ${item.channels.easycater
                             ? "bg-purple-100 text-purple-800"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.channels.easycater ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3" />}
                         <span>{item.channels.easycater ? "CATER ON" : "OFF"}</span>

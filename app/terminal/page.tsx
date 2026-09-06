@@ -616,13 +616,13 @@ export default function PosTerminalPage() {
                         )}
                       </div>
 
-                      {/* Stacked Vertical Add-ons List (One below the other in small text) */}
+                      {/* Stacked Vertical Add-ons List (Compact & fully visible without truncation) */}
                       {uniqueAddons.length > 0 && (
                         <div
-                          className="my-1 p-1 rounded bg-slate-50 border border-slate-200 space-y-1 max-h-32 overflow-y-auto scrollbar-none"
+                          className="my-1 p-0.5 rounded bg-slate-50/90 border border-slate-200 space-y-0.5 max-h-32 overflow-y-auto scrollbar-none"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-0.5">
+                          <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider px-1 pt-0.5">
                             Addons:
                           </div>
                           {uniqueAddons.map((addon) => (
@@ -633,12 +633,14 @@ export default function PosTerminalPage() {
                                 e.stopPropagation();
                                 addItemDirectly(item, [addon]);
                               }}
-                              className="w-full text-left px-1.5 py-1 rounded text-[10px] bg-white hover:bg-emerald-600 hover:text-white text-slate-700 border border-slate-200 transition font-medium flex items-center justify-between gap-1 shadow-2xs group"
+                              className="w-full text-left px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-white hover:bg-emerald-600 hover:text-white text-slate-700 border border-slate-200/80 transition flex items-center justify-between gap-1 group cursor-pointer"
                               title={`Add ${item.name} + ${addon.name}`}
                             >
-                              <span className="truncate">+ {addon.name}</span>
-                              <span className="font-mono text-[9px] shrink-0 font-bold text-slate-500 group-hover:text-white">
-                                (+₹{addon.price})
+                              <span className="truncate leading-tight font-medium text-slate-800 group-hover:text-white">
+                                {addon.name}
+                              </span>
+                              <span className="font-mono text-[9px] shrink-0 font-bold text-emerald-700 group-hover:text-white">
+                                +₹{addon.price}
                               </span>
                             </button>
                           ))}

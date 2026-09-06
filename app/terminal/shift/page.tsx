@@ -122,9 +122,8 @@ export default function PosShiftPage() {
               <h1 className="text-sm font-bold text-slate-900 leading-tight flex items-center gap-2">
                 <span>Start Day / End Day Register Control</span>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                    shiftStatus === "OPEN" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
-                  }`}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${shiftStatus === "OPEN" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                    }`}
                 >
                   Shift {shiftStatus}
                 </span>
@@ -147,7 +146,7 @@ export default function PosShiftPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+      <main className="flex-1 w-full mx-auto p-4 md:p-6 space-y-6">
         {message && (
           <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -169,8 +168,8 @@ export default function PosShiftPage() {
               <h3 className="font-extrabold text-sm text-white">70% Bill Printing Compliance Audit</h3>
             </div>
             <p className="text-xs text-slate-400">
-              Shift Total: <span className="font-mono text-white font-bold">₹{summary?.totalSales?.toLocaleString('en-IN') || 0}</span> | 
-              Printed: <span className="font-mono text-emerald-400 font-bold">₹{((summary as any)?.printedSalesAmount || 0).toLocaleString('en-IN')}</span> | 
+              Shift Total: <span className="font-mono text-white font-bold">₹{summary?.totalSales?.toLocaleString('en-IN') || 0}</span> |
+              Printed: <span className="font-mono text-emerald-400 font-bold">₹{((summary as any)?.printedSalesAmount || 0).toLocaleString('en-IN')}</span> |
               Ratio: <span className="font-mono text-amber-400 font-bold">{(summary as any)?.printComplianceRatio || 100}%</span>
             </p>
           </div>
