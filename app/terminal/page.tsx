@@ -73,7 +73,7 @@ export default function PosTerminalPage() {
   const [activeBill, setActiveBill] = useState<Bill | null>(null);
   const [orders, setOrders] = useState<DigitalOrder[]>([]);
   const [summary, setSummary] = useState<ShiftSummary | null>(null);
-  
+
   // Controls & Inputs
   const [orderType, setOrderType] = useState<"DINE_IN" | "TAKEAWAY" | "DELIVERY">("TAKEAWAY");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "UPI" | "CARD" | "ONLINE">("CASH");
@@ -86,7 +86,7 @@ export default function PosTerminalPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  
+
   // Sidebar Drawers State
   const [showNavDrawer, setShowNavDrawer] = useState(false);
   const [showTodayOrdersDrawer, setShowTodayOrdersDrawer] = useState(false);
@@ -250,16 +250,16 @@ export default function PosTerminalPage() {
       const bill = activeBill
         ? await apiRequest<Bill>(`/pos-terminal/bills/${activeBill.id}/items`, { method: "PATCH", body })
         : await apiRequest<Bill>("/pos-terminal/bills", {
-            method: "POST",
-            body: {
-              ...body,
-              type: orderType,
-              customerName: customerName || undefined,
-              customerPhone: customerPhone || undefined,
-              notes: billNote,
-              notePrintEnabled: true,
-            },
-          });
+          method: "POST",
+          body: {
+            ...body,
+            type: orderType,
+            customerName: customerName || undefined,
+            customerPhone: customerPhone || undefined,
+            notes: billNote,
+            notePrintEnabled: true,
+          },
+        });
 
       setActiveBill(bill);
       setCart([]);
@@ -340,28 +340,28 @@ export default function PosTerminalPage() {
     activeBill ||
     (cart.length
       ? {
-          id: "draft",
-          billNumber: "COUNTER-BILL",
-          status: "HELD",
-          subtotal: activeTotal,
-          discount: Number(discount || 0),
-          total: payableTotal,
-          customerName: customerName || "Walk-in Customer",
-          customerPhone: customerPhone || undefined,
-          paymentMethod: paymentMethod,
-          orderType: orderType,
-          createdAt: new Date().toISOString(),
-          items: cart.map((c, i) => ({
-            id: String(i),
-            name: c.name,
-            quantity: c.quantity,
-            unitPrice: c.unitPrice,
-            total: c.unitPrice * c.quantity,
-            addons: c.addons.map((a) => ({ addonId: a.addonId, name: a.name, price: a.price })),
-          })),
-          kotTickets: [],
-          payments: [],
-        }
+        id: "draft",
+        billNumber: "COUNTER-BILL",
+        status: "HELD",
+        subtotal: activeTotal,
+        discount: Number(discount || 0),
+        total: payableTotal,
+        customerName: customerName || "Walk-in Customer",
+        customerPhone: customerPhone || undefined,
+        paymentMethod: paymentMethod,
+        orderType: orderType,
+        createdAt: new Date().toISOString(),
+        items: cart.map((c, i) => ({
+          id: String(i),
+          name: c.name,
+          quantity: c.quantity,
+          unitPrice: c.unitPrice,
+          total: c.unitPrice * c.quantity,
+          addons: c.addons.map((a) => ({ addonId: a.addonId, name: a.name, price: a.price })),
+        })),
+        kotTickets: [],
+        payments: [],
+      }
       : null);
 
   return (
@@ -523,11 +523,10 @@ export default function PosTerminalPage() {
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`w-full text-left px-3.5 py-2.5 text-xs font-semibold transition border-b border-[#d8d8e2] ${
-              selectedCategory === "all"
-                ? "bg-white text-[#10201f] border-l-4 border-[#b82e46] font-bold shadow-2xs"
-                : "text-[#475569] hover:bg-white/50"
-            }`}
+            className={`w-full text-left px-3.5 py-2.5 text-xs font-semibold transition border-b border-[#d8d8e2] ${selectedCategory === "all"
+              ? "bg-white text-[#10201f] border-l-4 border-[#b82e46] font-bold shadow-2xs"
+              : "text-[#475569] hover:bg-white/50"
+              }`}
           >
             All Categories
           </button>
@@ -539,11 +538,10 @@ export default function PosTerminalPage() {
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`w-full text-left px-3.5 py-2.5 text-xs transition border-b border-[#d8d8e2] leading-tight ${
-                  isSelected
-                    ? "bg-white text-[#10201f] border-l-4 border-[#b82e46] font-bold shadow-2xs"
-                    : "text-[#475569] hover:bg-white/50"
-                }`}
+                className={`w-full text-left px-3.5 py-2.5 text-xs transition border-b border-[#d8d8e2] leading-tight ${isSelected
+                  ? "bg-white text-[#10201f] border-l-4 border-[#b82e46] font-bold shadow-2xs"
+                  : "text-[#475569] hover:bg-white/50"
+                  }`}
               >
                 {cat.name}
               </button>
@@ -597,11 +595,10 @@ export default function PosTerminalPage() {
                   return (
                     <div
                       key={item.id}
-                      className={`relative min-h-[95px] p-2.5 rounded-lg bg-white border text-left flex flex-col justify-between transition shadow-2xs hover:shadow-sm border-l-4 border-l-emerald-600 ${
-                        inCartCount > 0
-                          ? "border-2 border-blue-600 bg-blue-50/60"
-                          : "border-slate-300 hover:border-blue-400"
-                      }`}
+                      className={`relative min-h-[95px] p-2.5 rounded-lg bg-white border text-left flex flex-col justify-between transition shadow-2xs hover:shadow-sm border-l-4 border-l-emerald-600 ${inCartCount > 0
+                        ? "border-2 border-blue-600 bg-blue-50/60"
+                        : "border-slate-300 hover:border-blue-400"
+                        }`}
                     >
                       {/* Top Title Bar: Click to order Base Item without add-ons */}
                       <div
@@ -677,7 +674,31 @@ export default function PosTerminalPage() {
 
         {/* PANE 3: RIGHT CART & BILLING RECEIPT PANEL */}
         <aside className="w-[490px] bg-white border-l border-[#cbd5e1] flex flex-col shrink-0 shadow-md">
-          {/* Customer / Note Row */}
+          {/* Order Type Tabs (Dine In / Takeaway / Delivery) - ON TOP */}
+          <div className="p-1.5 bg-[#f8fafc] border-b border-[#cbd5e1]">
+            <div className="grid grid-cols-3 bg-[#e2e8f0] p-1 rounded border border-[#cbd5e1]">
+              {orderTypes.map((t) => {
+                const isSelected = orderType === t.id;
+                const IconComponent = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setOrderType(t.id)}
+                    className={`py-1.5 text-xs font-bold rounded transition flex items-center justify-center gap-1.5 ${isSelected
+                      ? "bg-[#b82e46] text-white shadow-2xs"
+                      : "text-slate-700 hover:bg-white/60"
+                      }`}
+                  >
+                    <IconComponent className="h-3.5 w-3.5" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Customer / Note Row (Directly below Order Type Tabs) */}
           <div className="p-1.5 border-b border-[#cbd5e1] flex items-center justify-between gap-2 bg-[#f8fafc]">
             <button
               type="button"
@@ -749,7 +770,7 @@ export default function PosTerminalPage() {
               /* ACTIVE CART ITEMS */
               <div className="divide-y divide-slate-100">
                 {cart.map((item) => (
-                  <div key={item.localId} className="p-2 hover:bg-slate-50 transition flex items-center justify-between gap-1 text-xs">
+                  <div key={item.localId} className="px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-50 text-xs">
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-slate-800 truncate">{item.name}</div>
                       {item.addons.length > 0 && (
@@ -857,29 +878,6 @@ export default function PosTerminalPage() {
               </span>
             </div>
 
-            {/* Order Type Tabs (Dine In / Takeaway / Delivery) */}
-            <div className="grid grid-cols-3 bg-[#e2e8f0] p-1 rounded border border-[#cbd5e1]">
-              {orderTypes.map((t) => {
-                const isSelected = orderType === t.id;
-                const IconComponent = t.icon;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setOrderType(t.id)}
-                    className={`py-1.5 text-xs font-bold rounded transition flex items-center justify-center gap-1.5 ${
-                      isSelected
-                        ? "bg-[#b82e46] text-white shadow-2xs"
-                        : "text-slate-700 hover:bg-white/60"
-                    }`}
-                  >
-                    <IconComponent className="h-3.5 w-3.5" />
-                    <span>{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
             {/* Payment Options */}
             <div className="grid grid-cols-3 gap-1">
               {(["CASH", "CARD", "UPI"] as const).map((m) => {
@@ -890,11 +888,10 @@ export default function PosTerminalPage() {
                     key={m}
                     type="button"
                     onClick={() => setPaymentMethod(m)}
-                    className={`py-1 px-1.5 rounded text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
-                      isSelected
-                        ? "bg-emerald-700 text-white border-emerald-800"
-                        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
-                    }`}
+                    className={`py-1 px-1.5 rounded text-xs font-bold border transition flex items-center justify-center gap-1.5 ${isSelected
+                      ? "bg-emerald-700 text-white border-emerald-800"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                      }`}
                   >
                     <PaymentIcon className="h-3.5 w-3.5" />
                     <span>{m === "CASH" ? "Cash" : m === "CARD" ? "Card" : "UPI"}</span>
