@@ -676,7 +676,7 @@ export default function PosTerminalPage() {
         </section>
 
         {/* PANE 3: RIGHT CART & BILLING RECEIPT PANEL */}
-        <aside className="w-[450px] bg-white border-l border-[#cbd5e1] flex flex-col shrink-0 shadow-md">
+        <aside className="w-[490px] bg-white border-l border-[#cbd5e1] flex flex-col shrink-0 shadow-md">
           {/* Customer / Note Row */}
           <div className="p-1.5 border-b border-[#cbd5e1] flex items-center justify-between gap-2 bg-[#f8fafc]">
             <button
@@ -708,8 +708,8 @@ export default function PosTerminalPage() {
             <div className="col-span-2 text-right">PRICE</div>
           </div>
 
-          {/* Cart Body (Expanded Height Area) */}
-          <div className="flex-1 overflow-y-auto scrollbar-none min-h-[220px]">
+          {/* Cart Body (Maximized Item Showing Area) */}
+          <div className="flex-1 overflow-y-auto scrollbar-none">
             {activeBill ? (
               <div className="p-2.5 space-y-2">
                 <div className="p-2 rounded bg-purple-50 border border-purple-200 text-xs">
@@ -799,7 +799,7 @@ export default function PosTerminalPage() {
             )}
           </div>
 
-          {/* Compact Cart Subtotals, Action Buttons, Total Display, Order Type & Payments */}
+          {/* Compact Bottom Controls Box */}
           <div className="p-2 bg-[#f8fafc] border-t border-[#cbd5e1] space-y-1.5 shrink-0">
             <div className="flex items-center justify-between text-xs">
               <div className="flex gap-1.5">
@@ -821,13 +821,13 @@ export default function PosTerminalPage() {
               </div>
             </div>
 
-            {/* Action Buttons Row (Save Bill, Print Bill, KOT) */}
+            {/* Action Buttons Row (Clean 3 Buttons: Save Bill, Print Bill, KOT) */}
             <div className="grid grid-cols-3 gap-1 pt-0.5">
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void createOrAddBill(true)}
-                className="py-2 px-1 rounded bg-[#b82e46] hover:bg-[#a8253b] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
+                className="py-2.5 px-1 rounded bg-[#b82e46] hover:bg-[#a8253b] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
               >
                 Save Bill
               </button>
@@ -835,7 +835,7 @@ export default function PosTerminalPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void finalizeBill(true)}
-                className="py-2 px-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
+                className="py-2.5 px-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
               >
                 Print Bill
               </button>
@@ -843,34 +843,9 @@ export default function PosTerminalPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void createKot(true)}
-                className="py-2 px-1 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
+                className="py-2.5 px-1 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
               >
                 KOT
-              </button>
-
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void createOrAddBill(false)}
-                className="py-1 px-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[11px] transition disabled:opacity-60"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void createKot(false)}
-                className="py-1 px-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[11px] transition disabled:opacity-60"
-              >
-                KOT Only
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void createOrAddBill(false)}
-                className="py-1 px-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[11px] transition disabled:opacity-60"
-              >
-                Save & EBill
               </button>
             </div>
 
