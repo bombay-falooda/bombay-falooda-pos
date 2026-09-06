@@ -29,3 +29,8 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+
+# executable binaries
+*.exe
+public/downloads/*.exe
+
