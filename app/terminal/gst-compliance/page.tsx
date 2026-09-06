@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiRequest } from "@/lib/api";
 
 type UnprintedBill = {
   id: string;
@@ -40,17 +41,11 @@ export default function GstCompliancePage() {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("pos_token") || "pos-dev-token";
-      const res = await fetch("http://localhost:4000/api/pos-terminal/gst-compliance/unprinted-bills", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTimeSlots(data.timeSlots || {});
-        setSummary(data.summary || null);
-      } else {
-        setError(data.message || "Failed to load GST compliance data");
-      }
+      const data = await apiRequest<{ timeSlots: Record<string, UnprintedBill[]>; summary: ShiftSummary }>(
+        "/pos-terminal/gst-compliance/unprinted-bills"
+      );
+      setTimeSlots(data.timeSlots || {});
+      setSummary(data.summary || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error loading GST compliance");
     } finally {
@@ -62,7 +57,6 @@ export default function GstCompliancePage() {
     if (selectedIds.includes(bill.id)) {
       setSelectedIds(selectedIds.filter((id) => id !== bill.id));
     } else {
-      // Calculate current selected total
       const allBills = Object.values(timeSlots).flat();
       const currentSelectedTotal = allBills
         .filter((b) => selectedIds.includes(b.id))
@@ -102,30 +96,24 @@ export default function GstCompliancePage() {
       setPrinting(true);
       setError("");
       setMessage("");
-      const token = localStorage.getItem("pos_token") || "pos-dev-token";
-      const res = await fetch("http://localhost:4000/api/pos-terminal/gst-compliance/batch-print", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ billIds: selectedIds }),
-      });
+      const data = await apiRequest<{ message: string; printedCount: number }>(
+        "/pos-terminal/gst-compliance/batch-print",
+        {
+          method: "POST",
+          body: { billIds: selectedIds },
+        }
+      );
 
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✓ ${data.message} Marked ${data.printedCount} bills as printed.`);
-        setSelectedIds([]);
-        await fetchUnprintedBills();
-      } else {
-        setError(data.message || "Failed to batch print bills");
-      }
-    } catch {
-      setError("Network error while batch printing bills");
+      setMessage(`✓ ${data.message} Marked ${data.printedCount} bills as printed.`);
+      setSelectedIds([]);
+      await fetchUnprintedBills();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to batch print bills");
     } finally {
       setPrinting(false);
     }
   }
+
 
   const allBills = Object.values(timeSlots).flat();
   const selectedBills = allBills.filter((b) => selectedIds.includes(b.id));
