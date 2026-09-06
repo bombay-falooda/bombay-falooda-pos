@@ -124,33 +124,33 @@ export default function GstCompliancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans p-6">
-        <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-6 py-4 rounded-2xl shadow-2xl">
-          <span className="h-5 w-5 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
-          <span className="text-sm font-bold tracking-wide">Loading GST Compliance Manager...</span>
+      <div className="min-h-screen bg-[#f1f5f9] text-slate-800 flex items-center justify-center font-sans p-6">
+        <div className="flex items-center gap-3 bg-white border border-slate-200 px-6 py-4 rounded-2xl shadow-lg">
+          <span className="h-5 w-5 rounded-full border-2 border-[#b82e46] border-t-transparent animate-spin" />
+          <span className="text-sm font-bold text-slate-700 tracking-wide">Loading GST Compliance Manager...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 font-sans p-6 mx-auto space-y-6">
       {/* Header */}
-      <header className="flex items-center justify-between bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-amber-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+      <header className="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="h-11 w-11 rounded-xl bg-amber-50 text-amber-700 font-black text-xl flex items-center justify-center border border-amber-200 shadow-2xs">
             📜
           </div>
           <div>
-            <h1 className="text-lg font-black text-white leading-tight">Bill Printing Compliance</h1>
-            <p className="text-xs text-slate-400">POS Sales Audit & Sequential Bill Finalizer</p>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">Bill Printing Compliance</h1>
+            <p className="text-xs text-slate-500 font-medium">POS Sales Audit & Sequential Bill Finalizer</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/terminal/shift"
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition"
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-300 transition flex items-center gap-1.5"
           >
             ← Back to Shift Summary
           </Link>
@@ -159,78 +159,78 @@ export default function GstCompliancePage() {
 
       {/* Alert Banners */}
       {message && (
-        <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
-          <span>✓</span>
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-2xs">
+          <span className="text-emerald-600 font-black">✓</span>
           <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-4 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-bold flex items-center gap-2">
-          <span>⚠️</span>
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 shadow-2xs">
+          <span className="text-rose-600 font-black">⚠️</span>
           <span>{error}</span>
         </div>
       )}
 
       {/* Compliance Metrics Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Shift Total Sales</span>
-          <div className="text-2xl font-black text-white font-mono">₹{summary?.totalSales.toLocaleString('en-IN')}</div>
-          <span className="text-[11px] text-slate-500 block">{summary?.totalOrdersCount} Total Orders</span>
+        <div className="p-4.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Shift Total Sales</span>
+          <div className="text-2xl font-black text-slate-900 font-mono">₹{summary?.totalSales.toLocaleString('en-IN')}</div>
+          <span className="text-xs text-slate-500 block font-medium">{summary?.totalOrdersCount} Total Orders</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Printed Bill Sales</span>
-          <div className="text-2xl font-black text-emerald-400 font-mono">₹{summary?.printedSalesAmount.toLocaleString('en-IN')}</div>
-          <span className="text-[11px] font-bold text-emerald-400 block">{summary?.printComplianceRatio}% Ratio</span>
+        <div className="p-4.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 shadow-xs space-y-1">
+          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Printed Bill Sales</span>
+          <div className="text-2xl font-black text-emerald-700 font-mono">₹{summary?.printedSalesAmount.toLocaleString('en-IN')}</div>
+          <span className="text-xs font-bold text-emerald-700 block">{summary?.printComplianceRatio}% Ratio</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">70% Target Requirement</span>
-          <div className="text-2xl font-black text-amber-400 font-mono">₹{summary?.target70PercentAmount.toLocaleString('en-IN')}</div>
-          <span className="text-[11px] text-slate-400 block">Min. Required to Close Day</span>
+        <div className="p-4.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-xs space-y-1">
+          <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">70% Target Requirement</span>
+          <div className="text-2xl font-black text-amber-700 font-mono">₹{summary?.target70PercentAmount.toLocaleString('en-IN')}</div>
+          <span className="text-xs text-amber-700 block font-medium">Min. Required to Close Day</span>
         </div>
 
-        <div className={`p-4 rounded-2xl border space-y-1 ${summary?.canCloseDay ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' : 'bg-red-950/40 border-red-500/40 text-red-300'
+        <div className={`p-4.5 rounded-2xl border shadow-xs space-y-1 ${summary?.canCloseDay ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'
           }`}>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider block opacity-80">Shift Status</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider block opacity-80">Shift Status</span>
           <div className="text-base font-black uppercase tracking-wide">
             {summary?.canCloseDay ? "COMPLIANT ✓" : "NON-COMPLIANT ⚠️"}
           </div>
-          <span className="text-[11px] font-medium block">
+          <span className="text-xs font-medium block">
             {summary?.canCloseDay ? "Day Closing Unlocked" : "Must Print Bills to Reach 70%"}
           </span>
         </div>
       </div>
 
       {/* Progress & Selection Control Bar */}
-      <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
         <div className="flex items-center justify-between text-xs font-bold">
-          <span className="text-slate-300">
-            Selected for Batch Printing: <span className="font-mono text-emerald-400">{selectedIds.length} Bills</span> (₹{selectedTotal.toLocaleString('en-IN')})
+          <span className="text-slate-700">
+            Selected for Batch Printing: <span className="font-mono font-bold text-emerald-700">{selectedIds.length} Bills</span> (₹{selectedTotal.toLocaleString('en-IN')})
           </span>
-          <span className="text-slate-400">
-            Projected Compliance Ratio: <span className="font-mono text-amber-400">{projectRatio}%</span>
+          <span className="text-slate-500">
+            Projected Compliance Ratio: <span className="font-mono font-bold text-[#b82e46]">{projectRatio}%</span>
           </span>
         </div>
 
         {/* Progress Bar */}
-        <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative">
+        <div className="h-3.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 relative">
           <div
-            className="h-full bg-emerald-500 transition-all duration-300"
+            className="h-full bg-[#b82e46] transition-all duration-300 rounded-full"
             style={{ width: `${Math.min(100, projectRatio)}%` }}
           />
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-amber-400 z-10"
+            className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10"
             style={{ left: "70%" }}
             title="70% GST Target Line"
           />
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
           <span>0%</span>
-          <span className="text-amber-400 font-bold">▲ 70% Target Threshold</span>
+          <span className="text-amber-700 font-bold">▲ 70% Target Threshold</span>
           <span>100%</span>
         </div>
       </div>
@@ -238,33 +238,33 @@ export default function GstCompliancePage() {
       {/* Unprinted Bills by Time Slot */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-200">Unprinted Bills by Chronological Time Slot</h2>
-          <span className="text-xs text-slate-400 font-mono">Total Unprinted: {allBills.length}</span>
+          <h2 className="text-sm font-bold text-slate-800">Unprinted Bills by Chronological Time Slot</h2>
+          <span className="text-xs text-slate-500 font-mono font-bold bg-slate-200/60 px-2.5 py-1 rounded-lg border border-slate-300/50">Total Unprinted: {allBills.length}</span>
         </div>
 
         {Object.keys(timeSlots).length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 space-y-2">
+          <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 text-slate-500 space-y-2 shadow-xs">
             <span className="text-3xl block">🎉</span>
-            <h3 className="font-bold text-white text-base">All Bills Are 100% Printed!</h3>
-            <p className="text-xs text-slate-400">No unprinted bills remain for this shift. Day close is fully unlocked.</p>
+            <h3 className="font-bold text-slate-900 text-base">All Bills Are 100% Printed!</h3>
+            <p className="text-xs text-slate-500">No unprinted bills remain for this shift. Day close is fully unlocked.</p>
           </div>
         ) : (
           Object.entries(timeSlots).map(([slotLabel, slotBills]) => {
             const allSlotSelected = slotBills.every((b) => selectedIds.includes(b.id));
 
             return (
-              <div key={slotLabel} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div key={slotLabel} className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-amber-400 font-mono font-bold text-xs">🕒 {slotLabel}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold">
+                    <span className="text-amber-700 font-mono font-bold text-xs">🕒 {slotLabel}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold border border-slate-200">
                       {slotBills.length} Bills
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleSelectSlot(slotBills)}
-                    className="text-xs text-emerald-400 font-bold hover:underline"
+                    className="text-xs text-[#b82e46] font-bold hover:underline"
                   >
                     {allSlotSelected ? "Deselect Slot" : "Select Entire Slot"}
                   </button>
@@ -278,8 +278,8 @@ export default function GstCompliancePage() {
                         key={bill.id}
                         onClick={() => handleToggleBill(bill)}
                         className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${isSelected
-                            ? "bg-emerald-950/40 border-emerald-500/60 text-white"
-                            : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                          ? "bg-emerald-50/80 border-2 border-emerald-500 text-slate-900 shadow-xs"
+                          : "bg-slate-50/70 border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-white"
                           }`}
                       >
                         <div className="flex items-center gap-3">
@@ -287,14 +287,14 @@ export default function GstCompliancePage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => { }}
-                            className="h-4 w-4 rounded border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer"
+                            className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
                           />
                           <div>
-                            <span className="font-mono text-xs font-bold text-white block">{bill.billNumber}</span>
-                            <span className="text-[11px] text-slate-400 block">{bill.itemsSummary}</span>
+                            <span className="font-mono text-xs font-bold text-slate-900 block">{bill.billNumber}</span>
+                            <span className="text-[11px] text-slate-500 block truncate max-w-[200px]">{bill.itemsSummary}</span>
                           </div>
                         </div>
-                        <span className="font-mono font-bold text-xs text-emerald-400">₹{bill.total}</span>
+                        <span className="font-mono font-bold text-xs text-emerald-700">₹{bill.total}</span>
                       </div>
                     );
                   })}
@@ -307,10 +307,10 @@ export default function GstCompliancePage() {
 
       {/* Floating Action Footer */}
       {selectedIds.length > 0 && (
-        <div className="sticky bottom-6 bg-slate-900 border border-slate-700 p-4 rounded-2xl shadow-2xl flex items-center justify-between z-30">
+        <div className="sticky bottom-6 bg-white/95 backdrop-blur-md border border-slate-300 p-4.5 rounded-2xl shadow-xl flex items-center justify-between z-30">
           <div>
-            <span className="text-xs text-slate-400 block">Selected for Sequential Batch Printing:</span>
-            <span className="text-base font-black text-white font-mono">
+            <span className="text-xs text-slate-500 font-medium block">Selected for Sequential Batch Printing:</span>
+            <span className="text-base font-black text-slate-900 font-mono">
               {selectedIds.length} Bills (₹{selectedTotal.toLocaleString('en-IN')})
             </span>
           </div>
@@ -319,11 +319,11 @@ export default function GstCompliancePage() {
             type="button"
             disabled={printing}
             onClick={() => void handleBatchPrint()}
-            className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl bg-[#b82e46] hover:bg-[#9d2439] text-white font-bold text-xs transition shadow-md shadow-[#b82e46]/20 flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             {printing ? (
               <>
-                <span className="h-4 w-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>Printing Sequential Bills...</span>
               </>
             ) : (
