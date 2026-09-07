@@ -91,12 +91,14 @@ textarea {
     padding: 0 !important;
   }
 
-  /* Hide main app wrapper directly under body */
-  body > main {
+  /* Hide all screen UI elements during printing */
+  .no-print,
+  body > div:not(#print-ticket-root) {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  /* Show ONLY #print-ticket-root portal and its children */
+  /* Show ONLY #print-ticket-root thermal receipt container */
   #print-ticket-root,
   #print-ticket-root * {
     display: block !important;
@@ -104,12 +106,12 @@ textarea {
   }
 
   #print-ticket-root {
-    position: absolute !important;
+    position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     width: 76mm !important;
     margin: 0 !important;
-    padding: 3mm !important;
+    padding: 2mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: monospace, Arial, sans-serif !important;

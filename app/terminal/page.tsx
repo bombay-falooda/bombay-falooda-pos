@@ -556,9 +556,7 @@ export default function PosTerminalPage() {
       : null);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#eef2f6] text-[#1e293b] overflow-hidden select-none font-sans">
-      {currentThermalBill ? <ThermalBillReceipt bill={currentThermalBill} /> : null}
-
+    <div className="no-print h-screen w-screen flex flex-col bg-[#eef2f6] text-[#1e293b] overflow-hidden select-none font-sans">
       {/* TOP HEADER BAR (Exact Match to PetPooja POS Header in Photo) */}
       <header className="no-print h-12 bg-white text-[#1e293b] flex items-center justify-between px-3 shrink-0 border-b border-[#cbd5e1] shadow-2xs z-30">
         {/* Left Brand & Action Bar */}
