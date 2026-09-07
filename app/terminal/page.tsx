@@ -36,11 +36,18 @@ import {
   Printer,
   Radio,
   Settings,
+  Bluetooth,
 } from "lucide-react";
 
 import { ThermalBillReceipt, money } from "@/components/pos-ui";
 import { apiRequest, type AcceptedDigitalOrder, type Bill, type DigitalOrder, type MenuAddon, type MenuCategory, type MenuItem } from "@/lib/api";
 import { clearPosSession, getPosToken, getSavedPosContext, type PosContext } from "@/lib/auth";
+import {
+  connectBluetoothPrinter,
+  sendEscPosToBluetooth,
+  buildEscPosKotReceipt,
+  buildEscPosBillReceipt,
+} from "@/lib/bluetooth-printer";
 
 type CartLine = {
   localId: string;
@@ -242,6 +249,59 @@ export default function PosTerminalPage() {
     }
   }
 
+  const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
+
+  async function handleConnectBluetooth() {
+    try {
+      setBusy(true);
+      setError("");
+      const name = await connectBluetoothPrinter();
+      setBtDeviceName(name);
+      setMessage(`Connected to Bluetooth Printer: ${name}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to pair Bluetooth printer");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function triggerThermalPrint(mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY", billData?: Bill | null, kotNumber?: string) {
+    setPrintMode(mode);
+    if (btDeviceName) {
+      try {
+        if (mode === "KOT_ONLY" || mode === "BOTH") {
+          const kotBytes = buildEscPosKotReceipt(
+            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+            orderType,
+            (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
+          );
+          await sendEscPosToBluetooth(kotBytes);
+        }
+        if (mode === "BILL_ONLY" || mode === "BOTH") {
+          const billBytes = buildEscPosBillReceipt(
+            context?.outlet.name || "Bombay Falooda",
+            context?.outlet.address || "Vadodara",
+            billData?.billNumber || "1",
+            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+            orderType,
+            (billData?.items || cart).map((i: any) => ({
+              name: i.name,
+              quantity: i.quantity || 1,
+              unitPrice: Number(i.unitPrice || i.price || 0),
+              total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
+            })),
+            Number(billData?.total || payableTotal)
+          );
+          await sendEscPosToBluetooth(billBytes);
+        }
+        return;
+      } catch (err: any) {
+        console.warn("Bluetooth thermal print failed, falling back to window.print():", err);
+      }
+    }
+    setTimeout(() => window.print(), 350);
+  }
+
   function handleClearScreen() {
     setCart([]);
     setActiveBill(null);
@@ -294,9 +354,8 @@ export default function PosTerminalPage() {
       }
 
       await loadTerminal();
-      setPrintMode("BOTH");
       setMessage(`Bill #${bill.billNumber} saved. Printing KOT & Bill...`);
-      setTimeout(() => window.print(), 350);
+      await triggerThermalPrint("BOTH", bill);
     });
   }
 
@@ -337,9 +396,8 @@ export default function PosTerminalPage() {
       });
 
       await loadTerminal();
-      setPrintMode("KOT_ONLY");
       setMessage(`KOT #${kotResult.kotNumber || 'Generated'} created & printed.`);
-      setTimeout(() => window.print(), 350);
+      await triggerThermalPrint("KOT_ONLY", bill, kotResult.kotNumber);
     });
   }
 
@@ -361,12 +419,11 @@ export default function PosTerminalPage() {
         },
       });
 
-      setPrintMode("BILL_ONLY");
       setMessage(`Bill #${bill.billNumber} finalized & paid.`);
+      await triggerThermalPrint("BILL_ONLY", bill);
       setTimeout(() => {
-        window.print();
         handleClearScreen();
-      }, 350);
+      }, 500);
 
       await loadTerminal();
     });
@@ -622,6 +679,21 @@ export default function PosTerminalPage() {
         {/* Right Utility Icons (PetPooja POS Strip) */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 text-xs text-slate-600 font-medium">
+            <button
+              type="button"
+              onClick={() => void handleConnectBluetooth()}
+              className={`flex items-center gap-1 px-2 py-1 rounded transition text-[11px] font-bold cursor-pointer ${
+                btDeviceName
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                  : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+              }`}
+              title={btDeviceName ? `Connected to ${btDeviceName}` : "Click to pair Bluetooth Thermal Printer"}
+            >
+              <Bluetooth className={`h-3.5 w-3.5 ${btDeviceName ? "text-emerald-600" : "text-blue-600"}`} />
+              <span className="hidden lg:inline">
+                {btDeviceName ? `BT: ${btDeviceName}` : "Pair BT Printer"}
+              </span>
+            </button>
             <Link
               href="/terminal/item-toggle"
               className="flex items-center gap-1.5 hover:text-[#b82e46] transition"
