@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   SlidersHorizontal,
   Store,
@@ -79,6 +81,7 @@ const orderTypes = [
 
 export default function PosTerminalPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [context, setContext] = useState<PosContext | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -143,6 +146,7 @@ export default function PosTerminalPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const token = getPosToken();
     const savedContext = getSavedPosContext();
     if (!token || !savedContext) {
@@ -1931,125 +1935,130 @@ export default function PosTerminalPage() {
       )}
 
       {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
-      <div id="print-ticket-root" className="hidden print:block">
-        {printMode === "KOT_ONLY" || printMode === "BOTH" ? (
-          <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "10px" }}>
-            <div style={{ textAlign: "center", fontWeight: "bold" }}>
-              <div style={{ fontSize: "11px" }}>
-                {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              <div style={{ fontSize: "15px", margin: "4px 0" }}>
-                {activeBill?.kotTickets?.[0]?.kotNumber ? `KOT - ${activeBill.kotTickets[0].kotNumber.replace("KOT-", "")}` : "KOT - 1"}
-              </div>
-              <div style={{ fontSize: "12px", textTransform: "uppercase" }}>
-                {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
-              <span>No. Item</span>
-              <span>Special Note</span>
-              <span>Qty.</span>
-            </div>
-
-            {(activeBill?.items || cart).map((item: any, idx: number) => (
-              <div key={idx} style={{ margin: "4px 0" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                  <span>{idx + 1} {item.name}</span>
-                  <span>{item.quantity}</span>
-                </div>
-                {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                  <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
-                    ({item.addons.map((a: any) => a.name).join(", ")})
-                  </div>
-                )}
-                {item.notes && (
-                  <div style={{ fontSize: "10px", paddingLeft: "10px", fontStyle: "italic" }}>
-                    Note: {item.notes}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        {printMode === "BILL_ONLY" || printMode === "BOTH" ? (
-          <div style={{ paddingTop: printMode === "BOTH" ? "10px" : "0" }}>
-            <div style={{ textAlign: "center", lineHeight: "1.2" }}>
-              <div style={{ fontWeight: "800", fontSize: "14px", textTransform: "uppercase" }}>
-                {context?.outlet.name || "Bombay Falooda"}
-              </div>
-              <div style={{ fontSize: "10px" }}>
-                {context?.outlet.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
-              </div>
-              <div style={{ fontSize: "10px" }}>
-                M. {(context?.outlet as any)?.phone || "9574754173"}
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0", paddingTop: "4px", fontSize: "11px", lineHeight: "1.3" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
-                <span style={{ fontWeight: "bold", textTransform: "uppercase" }}>
-                  {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
-                </span>
-              </div>
-              <div>Time: {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                <span>Cashier: {(context as any)?.device?.name || "biller"}</span>
-                <span>Bill No.: {activeBill?.billNumber?.replace("BILL-", "") || "47035"}</span>
-              </div>
-              <div style={{ fontWeight: "bold" }}>
-                Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "4px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
-              <span style={{ width: "50%" }}>No. Item</span>
-              <span style={{ width: "15%", textAlign: "center" }}>Qty.</span>
-              <span style={{ width: "15%", textAlign: "right" }}>Price</span>
-              <span style={{ width: "20%", textAlign: "right" }}>Amount</span>
-            </div>
-
-            {(activeBill?.items || cart).map((item: any, idx: number) => {
-              const qty = item.quantity || 1;
-              const unitPrice = Number(item.unitPrice || item.price || 0);
-              const itemTotal = Number(item.total || unitPrice * qty);
-              return (
-                <div key={idx} style={{ margin: "4px 0", fontSize: "11px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span style={{ width: "50%" }}>{idx + 1} {item.name}</span>
-                    <span style={{ width: "15%", textAlign: "center" }}>{qty}</span>
-                    <span style={{ width: "15%", textAlign: "right" }}>{unitPrice.toFixed(2)}</span>
-                    <span style={{ width: "20%", textAlign: "right" }}>{itemTotal.toFixed(2)}</span>
-                  </div>
-                  {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                    <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
-                      ({item.addons.map((a: any) => a.name).join(", ")})
+      {mounted && typeof document !== "undefined"
+        ? createPortal(
+            <div id="print-ticket-root">
+              {printMode === "KOT_ONLY" || printMode === "BOTH" ? (
+                <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "10px" }}>
+                  <div style={{ textAlign: "center", fontWeight: "bold" }}>
+                    <div style={{ fontSize: "11px" }}>
+                      {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                  )}
+                    <div style={{ fontSize: "15px", margin: "4px 0" }}>
+                      {activeBill?.kotTickets?.[0]?.kotNumber ? `KOT - ${activeBill.kotTickets[0].kotNumber.replace("KOT-", "")}` : "KOT - 1"}
+                    </div>
+                    <div style={{ fontSize: "12px", textTransform: "uppercase" }}>
+                      {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
+                    <span>No. Item</span>
+                    <span>Special Note</span>
+                    <span>Qty.</span>
+                  </div>
+
+                  {(activeBill?.items || cart).map((item: any, idx: number) => (
+                    <div key={idx} style={{ margin: "4px 0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                        <span>{idx + 1} {item.name}</span>
+                        <span>{item.quantity}</span>
+                      </div>
+                      {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
+                        <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
+                          ({item.addons.map((a: any) => a.name).join(", ")})
+                        </div>
+                      )}
+                      {item.notes && (
+                        <div style={{ fontSize: "10px", paddingLeft: "10px", fontStyle: "italic" }}>
+                          Note: {item.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              ) : null}
 
-            <div style={{ borderTop: "1px dashed #000", margin: "6px 0", paddingTop: "4px", fontSize: "11px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                <span>Total Qty: {(activeBill?.items || cart).reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)}</span>
-                <span>Sub Total: {Number(activeBill?.subtotal || payableTotal).toFixed(2)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", marginTop: "4px", borderTop: "1px solid #000", paddingTop: "4px" }}>
-                <span>Grand Total</span>
-                <span>₹ {Number(activeBill?.total || payableTotal).toFixed(2)}</span>
-              </div>
-            </div>
+              {printMode === "BILL_ONLY" || printMode === "BOTH" ? (
+                <div style={{ paddingTop: printMode === "BOTH" ? "10px" : "0" }}>
+                  <div style={{ textAlign: "center", lineHeight: "1.2" }}>
+                    <div style={{ fontWeight: "800", fontSize: "14px", textTransform: "uppercase" }}>
+                      {context?.outlet.name || "Bombay Falooda"}
+                    </div>
+                    <div style={{ fontSize: "10px" }}>
+                      {context?.outlet.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
+                    </div>
+                    <div style={{ fontSize: "10px" }}>
+                      M. {(context?.outlet as any)?.phone || "9574754173"}
+                    </div>
+                  </div>
 
-            <div style={{ textAlign: "center", paddingTop: "6px", fontSize: "10px", fontWeight: "bold" }}>
-              <div>Thank You Visit Again</div>
-              <div style={{ marginTop: "2px" }}>"Please wait for 10 minutes after ordering."</div>
-            </div>
-          </div>
-        ) : null}
-      </div>
+                  <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0", paddingTop: "4px", fontSize: "11px", lineHeight: "1.3" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                      <span style={{ fontWeight: "bold", textTransform: "uppercase" }}>
+                        {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
+                      </span>
+                    </div>
+                    <div>Time: {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                      <span>Cashier: {(context as any)?.device?.name || "biller"}</span>
+                      <span>Bill No.: {activeBill?.billNumber?.replace("BILL-", "") || "47035"}</span>
+                    </div>
+                    <div style={{ fontWeight: "bold" }}>
+                      Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "4px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
+                    <span style={{ width: "50%" }}>No. Item</span>
+                    <span style={{ width: "15%", textAlign: "center" }}>Qty.</span>
+                    <span style={{ width: "15%", textAlign: "right" }}>Price</span>
+                    <span style={{ width: "20%", textAlign: "right" }}>Amount</span>
+                  </div>
+
+                  {(activeBill?.items || cart).map((item: any, idx: number) => {
+                    const qty = item.quantity || 1;
+                    const unitPrice = Number(item.unitPrice || item.price || 0);
+                    const itemTotal = Number(item.total || unitPrice * qty);
+                    return (
+                      <div key={idx} style={{ margin: "4px 0", fontSize: "11px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                          <span style={{ width: "50%" }}>{idx + 1} {item.name}</span>
+                          <span style={{ width: "15%", textAlign: "center" }}>{qty}</span>
+                          <span style={{ width: "15%", textAlign: "right" }}>{unitPrice.toFixed(2)}</span>
+                          <span style={{ width: "20%", textAlign: "right" }}>{itemTotal.toFixed(2)}</span>
+                        </div>
+                        {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
+                          <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
+                            ({item.addons.map((a: any) => a.name).join(", ")})
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div style={{ borderTop: "1px dashed #000", margin: "6px 0", paddingTop: "4px", fontSize: "11px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                      <span>Total Qty: {(activeBill?.items || cart).reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)}</span>
+                      <span>Sub Total: {Number(activeBill?.subtotal || payableTotal).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", marginTop: "4px", borderTop: "1px solid #000", paddingTop: "4px" }}>
+                      <span>Grand Total</span>
+                      <span>₹ {Number(activeBill?.total || payableTotal).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: "center", paddingTop: "6px", fontSize: "10px", fontWeight: "bold" }}>
+                    <div>Thank You Visit Again</div>
+                    <div style={{ marginTop: "2px" }}>"Please wait for 10 minutes after ordering."</div>
+                  </div>
+                </div>
+              ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

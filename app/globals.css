@@ -74,7 +74,7 @@ textarea {
   display: none;
 }
 
-.print-ticket {
+#print-ticket-root {
   display: none;
 }
 
@@ -91,11 +91,9 @@ textarea {
     padding: 0 !important;
   }
 
-  /* Hide all screen UI elements during printing */
-  .no-print,
-  body > div:not(#print-ticket-root) {
+  /* Hide all siblings of #print-ticket-root under document.body */
+  body > *:not(#print-ticket-root) {
     display: none !important;
-    visibility: hidden !important;
   }
 
   /* Show ONLY #print-ticket-root thermal receipt container */
@@ -106,7 +104,7 @@ textarea {
   }
 
   #print-ticket-root {
-    position: fixed !important;
+    position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 76mm !important;
@@ -117,7 +115,6 @@ textarea {
     font-family: monospace, Arial, sans-serif !important;
     font-size: 11px !important;
     line-height: 1.35 !important;
-    z-index: 99999999 !important;
   }
 
   #print-ticket-root table {
