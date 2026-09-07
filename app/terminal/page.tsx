@@ -2003,7 +2003,7 @@ export default function PosTerminalPage() {
                     <div>Time: {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
                       <span>Cashier: {(context as any)?.device?.name || "biller"}</span>
-                      <span>Bill No.: {activeBill?.billNumber?.replace("BILL-", "") || "47035"}</span>
+                      <span>Bill No.: {activeBill?.billNumber?.replace("BILL-", "") || "1"}</span>
                     </div>
                     <div style={{ fontWeight: "bold" }}>
                       Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
