@@ -49,6 +49,20 @@ type CartLine = {
   addons: Array<{ addonId: string; name: string; price: number }>;
 };
 
+type KotTicket = {
+  id: string;
+  kotNumber: string;
+  createdAt: string;
+  notes?: string | null;
+  items: Array<{
+    id: string;
+    quantity: number;
+    notes?: string | null;
+    billItem?: { name: string; total: number; unitPrice: number };
+  }>;
+  bill?: Bill | null;
+};
+
 type ShiftSummary = {
   totalSales: number;
   finalizedBills: number;
@@ -86,6 +100,14 @@ export default function PosTerminalPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+
+  // Recent KOTs & Center Addons Modal State
+  const [showRecentKotsDrawer, setShowRecentKotsDrawer] = useState(false);
+  const [recentKots, setRecentKots] = useState<KotTicket[]>([]);
+  const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
+  const [customizingAddons, setCustomizingAddons] = useState<Array<{ addonId: string; name: string; price: number }>>([]);
+  const [customizingQty, setCustomizingQty] = useState(1);
+  const [printMode, setPrintMode] = useState<"BOTH" | "KOT_ONLY" | "BILL_ONLY">("BOTH");
 
   // Sidebar Drawers State
   const [showNavDrawer, setShowNavDrawer] = useState(false);
@@ -199,7 +221,176 @@ export default function PosTerminalPage() {
   }
 
   function handleItemClick(item: MenuItem) {
-    addItemDirectly(item, []);
+    const uniqueAddons = Array.from(
+      new Map(
+        (item.addonGroups || [])
+          .flatMap((g) => g.addons)
+          .map((a) => [a.id, a])
+      ).values()
+    );
+
+    if (uniqueAddons.length > 0) {
+      setCustomizingItem(item);
+      setCustomizingAddons([]);
+      setCustomizingQty(1);
+    } else {
+      addItemDirectly(item, []);
+    }
+  }
+
+  function handleClearScreen() {
+    setCart([]);
+    setActiveBill(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerEmail("");
+    setBillNote("");
+    setDiscount("0");
+    setMessage("Screen cleared for new order.");
+  }
+
+  async function saveAndPrintBoth() {
+    if (!cart.length && !activeBill) {
+      setError("Please select at least one item from left menu");
+      return;
+    }
+
+    await runAction(async () => {
+      let bill = activeBill;
+      if (!bill) {
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>("/pos-terminal/bills", {
+          method: "POST",
+          body: {
+            ...body,
+            type: orderType,
+            customerName: customerName || undefined,
+            customerPhone: customerPhone || undefined,
+            notes: billNote,
+            notePrintEnabled: true,
+          },
+        });
+        setActiveBill(bill);
+        setCart([]);
+      }
+
+      try {
+        await apiRequest(`/pos-terminal/bills/${bill.id}/kot`, {
+          method: "POST",
+          body: { notes: billNote },
+        });
+      } catch {
+        // KOT ticket generated or existing
+      }
+
+      await loadTerminal();
+      setPrintMode("BOTH");
+      setMessage(`Bill #${bill.billNumber} saved. Printing KOT & Bill...`);
+      setTimeout(() => window.print(), 350);
+    });
+  }
+
+  async function createKotOnly() {
+    if (!cart.length && !activeBill) {
+      setError("Please select at least one item from left menu");
+      return;
+    }
+
+    await runAction(async () => {
+      let bill = activeBill;
+      if (!bill) {
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>("/pos-terminal/bills", {
+          method: "POST",
+          body: {
+            ...body,
+            type: orderType,
+            customerName: customerName || undefined,
+            customerPhone: customerPhone || undefined,
+            notes: billNote,
+            notePrintEnabled: true,
+          },
+        });
+        setActiveBill(bill);
+        setCart([]);
+      }
+
+      const kotResult = await apiRequest<{ kotNumber: string }>(`/pos-terminal/bills/${bill.id}/kot`, {
+        method: "POST",
+        body: { notes: billNote },
+      });
+
+      await loadTerminal();
+      setPrintMode("KOT_ONLY");
+      setMessage(`KOT #${kotResult.kotNumber || 'Generated'} created & printed.`);
+      setTimeout(() => window.print(), 350);
+    });
+  }
+
+  async function finalizeAndPrintBillOnly() {
+    if (!activeBill && cart.length > 0) {
+      await createOrAddBill(false);
+    }
+    if (!activeBill) {
+      setError("No active bill selected to finalize");
+      return;
+    }
+
+    await runAction(async () => {
+      const bill = await apiRequest<Bill>(`/pos-terminal/bills/${activeBill.id}/finalize`, {
+        method: "PATCH",
+        body: {
+          discount: Number(discount || 0),
+          payments: [{ method: paymentMethod, amount: payableTotal }],
+        },
+      });
+
+      setPrintMode("BILL_ONLY");
+      setMessage(`Bill #${bill.billNumber} finalized & paid.`);
+      setTimeout(() => {
+        window.print();
+        handleClearScreen();
+      }, 350);
+
+      await loadTerminal();
+    });
+  }
+
+  async function fetchRecentKots() {
+    try {
+      setBusy(true);
+      const data = await apiRequest<KotTicket[]>("/pos-terminal/kots");
+      setRecentKots(data || []);
+      setShowRecentKotsDrawer(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load recent KOTs");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function editKot(kot: KotTicket) {
+    if (!kot.bill) return;
+    setActiveBill(kot.bill);
+    setCart([]);
+    setCustomerName(kot.bill.customerName || "");
+    setCustomerPhone(kot.bill.customerPhone || "");
+    setCustomerEmail(kot.bill.customerEmail || "");
+    setBillNote(kot.notes || kot.bill.notes || "");
+    setShowRecentKotsDrawer(false);
+    setMessage(`Editing KOT #${kot.kotNumber} for Bill #${kot.bill.billNumber}`);
   }
 
   function updateQuantity(localId: string, delta: number) {
@@ -844,31 +1035,42 @@ export default function PosTerminalPage() {
               </div>
             </div>
 
-            {/* Action Buttons Row (Clean 3 Buttons: Save Bill, Print Bill, KOT) */}
-            <div className="grid grid-cols-3 gap-1 pt-0.5">
+            {/* Action Buttons Row (Clear, Save & Print [KOT+Bill], KOT Only, Print Bill) */}
+            <div className="grid grid-cols-4 gap-1 pt-0.5">
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => void createOrAddBill(true)}
-                className="py-2.5 px-1 rounded bg-[#b82e46] hover:bg-[#a8253b] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
+                onClick={handleClearScreen}
+                className="py-2.5 px-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-[11px] border border-rose-200 transition flex items-center justify-center gap-1 cursor-pointer"
+                title="Clear active screen, cart items, customer details & notes"
               >
-                Save Bill
+                Clear
               </button>
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void finalizeBill(true)}
-                className="py-2.5 px-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
+                onClick={() => void saveAndPrintBoth()}
+                className="py-2.5 px-1 rounded bg-[#b82e46] hover:bg-[#a8253b] text-white font-bold text-[11px] shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer"
+                title="Saves bill & prints BOTH KOT and Bill receipts"
+              >
+                Save & Print
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void createKotOnly()}
+                className="py-2.5 px-1 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-[11px] shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer"
+                title="Generates & prints KOT receipt only"
+              >
+                KOT Only
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void finalizeAndPrintBillOnly()}
+                className="py-2.5 px-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer"
+                title="Finalizes payment & prints Bill receipt only"
               >
                 Print Bill
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void createKot(true)}
-                className="py-2.5 px-1 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black text-xs shadow-2xs transition disabled:opacity-60 flex items-center justify-center gap-1"
-              >
-                KOT
               </button>
             </div>
 
@@ -1564,6 +1766,324 @@ export default function PosTerminalPage() {
           </div>
         </div>
       )}
+
+      {/* RECENT KOTS DRAWER (SLIDE-OVER FROM RIGHT) */}
+      {showRecentKotsDrawer && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end">
+          <div className="bg-white h-full w-[480px] p-5 space-y-4 shadow-2xl border-l border-slate-300 flex flex-col justify-between">
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex items-center justify-between border-b pb-3 mb-3 shrink-0">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <span>🕒 Recent Kitchen Orders (KOTs)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-mono font-bold">
+                      {recentKots.length} Today
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Inspect open KOTs, edit items, or convert directly to printed bill</p>
+                </div>
+                <button type="button" onClick={() => setShowRecentKotsDrawer(false)} className="p-1 rounded hover:bg-slate-100">
+                  <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                </button>
+              </div>
+
+              {recentKots.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-2">
+                  <span className="text-3xl">🍳</span>
+                  <div className="font-bold text-xs text-slate-600">No Active KOTs</div>
+                  <p className="text-[11px] text-slate-400">All kitchen orders are cleared for today's shift.</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto space-y-3 scrollbar-none pr-1">
+                  {recentKots.map((kot) => (
+                    <div key={kot.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-[#2563eb] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                            #{kot.kotNumber}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-700">
+                            Bill #{kot.bill?.billNumber || "Draft"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {new Date(kot.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+
+                      {/* Items */}
+                      <div className="space-y-1">
+                        {kot.items.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-800">
+                              {item.quantity}x {item.billItem?.name || item.notes || "Item"}
+                            </span>
+                            <span className="font-mono text-[11px] text-slate-500">
+                              ₹{Number(item.billItem?.total || 0).toFixed(0)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {kot.notes && (
+                        <div className="text-[11px] text-amber-800 bg-amber-50 p-1.5 rounded border border-amber-200 font-medium">
+                          Note: {kot.notes}
+                        </div>
+                      )}
+
+                      {/* Card Action Buttons */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => editKot(kot)}
+                          className="flex-1 py-1.5 rounded bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs transition"
+                        >
+                          ✏️ Edit KOT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (kot.bill) {
+                              setActiveBill(kot.bill);
+                              void finalizeAndPrintBillOnly();
+                              setShowRecentKotsDrawer(false);
+                            }
+                          }}
+                          className="flex-1 py-1.5 rounded bg-[#b82e46] hover:bg-[#9d2439] text-white font-bold text-xs transition shadow-2xs"
+                        >
+                          🖨️ Print Bill
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CENTER ADD-ONS SELECTION MODAL POPUP */}
+      {customizingItem && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#b82e46] tracking-wider">Customize Toppings</span>
+                <h3 className="text-base font-bold text-slate-900">{customizingItem.name}</h3>
+              </div>
+              <button type="button" onClick={() => setCustomizingItem(null)} className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">Select toppings to add to your loaded cup:</p>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-none pr-1">
+              {Array.from(
+                new Map(
+                  (customizingItem.addonGroups || [])
+                    .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
+                    .map((a) => [a.id, a])
+                ).values()
+              ).map((addon) => {
+                const isChecked = customizingAddons.some((a) => a.addonId === addon.id);
+                return (
+                  <label
+                    key={addon.id}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${isChecked ? "bg-emerald-50 border-emerald-500 text-slate-900" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white"}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCustomizingAddons([...customizingAddons, { addonId: addon.id, name: addon.name, price: Number(addon.price) }]);
+                          } else {
+                            setCustomizingAddons(customizingAddons.filter((a) => a.addonId !== addon.id));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-800 block">{addon.name}</span>
+                        <span className="text-[10px] text-slate-400 block">{addon.groupName}</span>
+                      </div>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-700">+₹{Number(addon.price)}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Qty & Add to Cart */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setCustomizingQty(Math.max(1, customizingQty - 1))}
+                  className="h-7 w-7 bg-white rounded font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs"
+                >
+                  -
+                </button>
+                <span className="w-5 text-center font-bold text-xs text-slate-800">{customizingQty}</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomizingQty(customizingQty + 1)}
+                  className="h-7 w-7 bg-white rounded font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const addonTotal = customizingAddons.reduce((sum, a) => sum + a.price, 0);
+                  const unitPrice = Number(customizingItem.price) + addonTotal;
+                  setCart((current) => [
+                    ...current,
+                    {
+                      localId: `${customizingItem.id}-${Date.now()}-${current.length}`,
+                      itemId: customizingItem.id,
+                      name: customizingItem.name,
+                      quantity: customizingQty,
+                      addons: customizingAddons,
+                      unitPrice,
+                    },
+                  ]);
+                  setCustomizingItem(null);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-[#b82e46] hover:bg-[#a8253b] text-white font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Add to Cart (₹{((Number(customizingItem.price) + customizingAddons.reduce((sum, a) => sum + a.price, 0)) * customizingQty).toFixed(0)})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
+      <div id="print-ticket-root">
+        {printMode === "KOT_ONLY" || printMode === "BOTH" ? (
+          <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "10px" }}>
+            <div style={{ textAlign: "center", fontWeight: "bold" }}>
+              <div style={{ fontSize: "11px" }}>
+                {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div style={{ fontSize: "15px", margin: "4px 0" }}>
+                {activeBill?.kotTickets?.[0]?.kotNumber ? `KOT - ${activeBill.kotTickets[0].kotNumber.replace("KOT-", "")}` : "KOT - 1"}
+              </div>
+              <div style={{ fontSize: "12px", textTransform: "uppercase" }}>
+                {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
+              <span>No. Item</span>
+              <span>Special Note</span>
+              <span>Qty.</span>
+            </div>
+
+            {(activeBill?.items || cart).map((item: any, idx: number) => (
+              <div key={idx} style={{ margin: "4px 0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                  <span>{idx + 1} {item.name}</span>
+                  <span>{item.quantity}</span>
+                </div>
+                {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
+                  <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
+                    ({item.addons.map((a: any) => a.name).join(", ")})
+                  </div>
+                )}
+                {item.notes && (
+                  <div style={{ fontSize: "10px", paddingLeft: "10px", fontStyle: "italic" }}>
+                    Note: {item.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {printMode === "BILL_ONLY" || printMode === "BOTH" ? (
+          <div style={{ paddingTop: printMode === "BOTH" ? "10px" : "0" }}>
+            <div style={{ textAlign: "center", lineHeight: "1.2" }}>
+              <div style={{ fontWeight: "800", fontSize: "14px", textTransform: "uppercase" }}>
+                {context?.outlet.name || "Bombay Falooda"}
+              </div>
+              <div style={{ fontSize: "10px" }}>
+                {context?.outlet.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
+              </div>
+              <div style={{ fontSize: "10px" }}>
+                M. {(context?.outlet as any)?.phone || "9574754173"}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0", paddingTop: "4px", fontSize: "11px", lineHeight: "1.3" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                <span style={{ fontWeight: "bold", textTransform: "uppercase" }}>
+                  {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
+                </span>
+              </div>
+              <div>Time: {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                <span>Cashier: {(context as any)?.device?.name || "biller"}</span>
+                <span>Bill No.: {activeBill?.billNumber?.replace("BILL-", "") || "47035"}</span>
+              </div>
+              <div style={{ fontWeight: "bold" }}>
+                Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "4px 0", padding: "4px 0", display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "11px" }}>
+              <span style={{ width: "50%" }}>No. Item</span>
+              <span style={{ width: "15%", textAlign: "center" }}>Qty.</span>
+              <span style={{ width: "15%", textAlign: "right" }}>Price</span>
+              <span style={{ width: "20%", textAlign: "right" }}>Amount</span>
+            </div>
+
+            {(activeBill?.items || cart).map((item: any, idx: number) => {
+              const qty = item.quantity || 1;
+              const unitPrice = Number(item.unitPrice || item.price || 0);
+              const itemTotal = Number(item.total || unitPrice * qty);
+              return (
+                <div key={idx} style={{ margin: "4px 0", fontSize: "11px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                    <span style={{ width: "50%" }}>{idx + 1} {item.name}</span>
+                    <span style={{ width: "15%", textAlign: "center" }}>{qty}</span>
+                    <span style={{ width: "15%", textAlign: "right" }}>{unitPrice.toFixed(2)}</span>
+                    <span style={{ width: "20%", textAlign: "right" }}>{itemTotal.toFixed(2)}</span>
+                  </div>
+                  {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
+                    <div style={{ fontSize: "10px", paddingLeft: "10px", color: "#444" }}>
+                      ({item.addons.map((a: any) => a.name).join(", ")})
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <div style={{ borderTop: "1px dashed #000", margin: "6px 0", paddingTop: "4px", fontSize: "11px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                <span>Total Qty: {(activeBill?.items || cart).reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)}</span>
+                <span>Sub Total: {Number(activeBill?.subtotal || payableTotal).toFixed(2)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", marginTop: "4px", borderTop: "1px solid #000", paddingTop: "4px" }}>
+                <span>Grand Total</span>
+                <span>₹ {Number(activeBill?.total || payableTotal).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", paddingTop: "6px", fontSize: "10px", fontWeight: "bold" }}>
+              <div>Thank You Visit Again</div>
+              <div style={{ marginTop: "2px" }}>"Please wait for 10 minutes after ordering."</div>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
