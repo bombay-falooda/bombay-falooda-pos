@@ -786,69 +786,37 @@ export default function PosTerminalPage() {
                   return (
                     <div
                       key={item.id}
-                      className={`relative min-h-[95px] p-2.5 rounded-lg bg-white border text-left flex flex-col justify-between transition shadow-2xs hover:shadow-sm border-l-4 border-l-emerald-600 ${inCartCount > 0
+                      onClick={() => handleItemClick(item)}
+                      className={`relative min-h-[90px] p-2.5 rounded-lg bg-white border text-left flex flex-col justify-between transition shadow-2xs hover:shadow-sm border-l-4 border-l-emerald-600 cursor-pointer ${inCartCount > 0
                         ? "border-2 border-blue-600 bg-blue-50/60"
                         : "border-slate-300 hover:border-blue-400"
                         }`}
                     >
-                      {/* Top Title Bar: Click to order Base Item without add-ons */}
-                      <div
-                        onClick={() => handleItemClick(item)}
-                        className="cursor-pointer group flex items-start justify-between gap-1 pb-1"
-                        title="Click to order base item without add-ons"
-                      >
-                        <span className="font-bold text-xs text-slate-800 leading-tight group-hover:text-blue-600 transition">
+                      {/* Top Title Bar */}
+                      <div className="flex items-start justify-between gap-1 pb-1">
+                        <span className="font-bold text-xs text-slate-800 leading-tight">
                           {item.name}
                         </span>
                         {uniqueAddons.length > 0 && (
-                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200 shrink-0">
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 shrink-0">
                             +Addons
                           </span>
                         )}
                       </div>
 
-                      {/* Stacked Vertical Add-ons List (Compact & fully visible without truncation) */}
-                      {uniqueAddons.length > 0 && (
-                        <div
-                          className="my-1 p-0.5 rounded bg-slate-50/90 border border-slate-200 space-y-0.5 max-h-32 overflow-y-auto scrollbar-none"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider px-1 pt-0.5">
-                            Addons:
-                          </div>
-                          {uniqueAddons.map((addon) => (
-                            <button
-                              key={addon.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addItemDirectly(item, [addon]);
-                              }}
-                              className="w-full text-left px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-white hover:bg-emerald-600 hover:text-white text-slate-700 border border-slate-200/80 transition flex items-center justify-between gap-1 group cursor-pointer"
-                              title={`Add ${item.name} + ${addon.name}`}
-                            >
-                              <span className="truncate leading-tight font-medium text-slate-800 group-hover:text-white">
-                                {addon.name}
-                              </span>
-                              <span className="font-mono text-[9px] shrink-0 font-bold text-emerald-700 group-hover:text-white">
-                                +₹{addon.price}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
+                      {/* Description if present */}
+                      {item.description && (
+                        <p className="text-[10px] text-slate-400 line-clamp-1 my-1">
+                          {item.description}
+                        </p>
                       )}
 
-                      {/* Bottom Price Footer: Click to order Base Item without add-ons */}
-                      <div
-                        onClick={() => handleItemClick(item)}
-                        className="cursor-pointer pt-1 border-t border-slate-100 flex items-center justify-between shrink-0 group"
-                        title="Click to order base item without add-ons"
-                      >
+                      {/* Bottom Price Footer */}
+                      <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-1">
-                          <span className="font-mono text-[11px] font-bold text-slate-700 group-hover:text-blue-600 transition">
+                          <span className="font-mono text-[11px] font-bold text-slate-700">
                             ₹{Number(item.price).toFixed(0)}
                           </span>
-                          <span className="text-[9px] text-slate-400 font-semibold">(Base)</span>
                         </div>
 
                         {inCartCount > 0 && (
@@ -1965,7 +1933,7 @@ export default function PosTerminalPage() {
       )}
 
       {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
-      <div id="print-ticket-root">
+      <div id="print-ticket-root" className="hidden print:block">
         {printMode === "KOT_ONLY" || printMode === "BOTH" ? (
           <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "10px" }}>
             <div style={{ textAlign: "center", fontWeight: "bold" }}>
