@@ -739,21 +739,6 @@ export default function PosTerminalPage() {
         {/* Right Utility Icons (PetPooja POS Strip) */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 text-xs text-slate-600 font-medium">
-            <button
-              type="button"
-              onClick={() => void handleConnectBluetooth()}
-              className={`flex items-center gap-1 px-2 py-1 rounded transition text-[11px] font-bold cursor-pointer ${
-                btDeviceName
-                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                  : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
-              }`}
-              title={btDeviceName ? `Connected to ${btDeviceName}` : "Click to pair Bluetooth Thermal Printer"}
-            >
-              <Bluetooth className={`h-3.5 w-3.5 ${btDeviceName ? "text-emerald-600" : "text-blue-600"}`} />
-              <span className="hidden lg:inline">
-                {btDeviceName ? `BT: ${btDeviceName}` : "Pair BT Printer"}
-              </span>
-            </button>
             <Link
               href="/terminal/item-toggle"
               className="flex items-center gap-1.5 hover:text-[#b82e46] transition"
