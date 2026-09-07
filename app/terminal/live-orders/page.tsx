@@ -9,10 +9,6 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
-  ShoppingBag,
-  Bike,
-  Utensils,
-  User,
   Phone,
   Check,
   Globe,
@@ -87,9 +83,38 @@ export default function PosLiveOrdersPage() {
     }
   }
 
+  async function updateStatus(orderId: string, nextStatus: string) {
+    try {
+      setActionMessage("");
+      await apiRequest(`/pos-terminal/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: { status: nextStatus },
+      });
+      setActionMessage(`Order #${orderId.slice(-6)} status updated to ${nextStatus}`);
+      await fetchLiveOrders();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update order status");
+    }
+  }
+
   function copyToClipboard(text: string, label: string) {
     void navigator.clipboard.writeText(text);
     setActionMessage(`Copied ${label} to clipboard!`);
+  }
+
+  function getSourceBadgeClass(source: string) {
+    switch (source?.toUpperCase()) {
+      case "ZOMATO":
+        return "bg-[#cb202d] text-white border-red-700";
+      case "SWIGGY":
+        return "bg-[#fc8019] text-white border-orange-600";
+      case "URBANPIPER":
+        return "bg-indigo-600 text-white border-indigo-700";
+      case "WEBSITE":
+        return "bg-emerald-600 text-white border-emerald-700";
+      default:
+        return "bg-purple-600 text-white border-purple-700";
+    }
   }
 
   return (
@@ -126,7 +151,7 @@ export default function PosLiveOrdersPage() {
         <button
           type="button"
           onClick={fetchLiveOrders}
-          className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold flex items-center gap-1.5"
+          className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>Sync Orders</span>
@@ -155,7 +180,7 @@ export default function PosLiveOrdersPage() {
             </div>
             <h3 className="text-base font-bold text-slate-800">No Pending Live Orders</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              All digital orders from Website, Zomato, Swiggy & EasyCater have been processed into the POS terminal.
+              All digital orders from Zomato, Swiggy, UrbanPiper & Website have been auto-accepted into POS.
             </p>
           </div>
         ) : (
@@ -166,9 +191,9 @@ export default function PosLiveOrdersPage() {
                 className="bg-white rounded-xl border border-slate-200 shadow-2xs hover:shadow-md transition overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  {/* Top Bar */}
+                  {/* Top Bar with Brand Badge */}
                   <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded bg-purple-100 text-purple-800 text-xs font-extrabold uppercase flex items-center gap-1">
+                    <span className={`px-2.5 py-1 rounded text-xs font-black uppercase flex items-center gap-1 border shadow-2xs ${getSourceBadgeClass(order.source)}`}>
                       <Globe className="h-3.5 w-3.5" />
                       {order.source}
                     </span>
@@ -183,16 +208,21 @@ export default function PosLiveOrdersPage() {
                     <div className="flex items-center justify-between border-b pb-2">
                       <div>
                         <div className="font-bold text-xs text-slate-900">
-                          {order.customerName || "Walk-in Customer"}
+                          {order.customerName || "Online Customer"}
                         </div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
                           <Phone className="h-3 w-3" />
-                          <span>{order.customerPhone || "No Phone"}</span>
+                          <span>{order.customerPhone || "9876543210"}</span>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${order.type === "DELIVERY" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                        {order.type}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${order.type === "DELIVERY" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                          {order.type}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${order.status === "READY" ? "bg-emerald-600 text-white" : "bg-blue-100 text-blue-800"}`}>
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Delivery Driver Selection (Only for Delivery orders) */}
@@ -227,14 +257,14 @@ export default function PosLiveOrdersPage() {
                         <button
                           type="button"
                           onClick={() => copyToClipboard(acceptedLinks[order.id].customer, "Customer Tracking Link")}
-                          className="w-full text-left p-1.5 rounded bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-mono text-blue-800 truncate block"
+                          className="w-full text-left p-1.5 rounded bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-mono text-blue-800 truncate block cursor-pointer"
                         >
                           🔗 Customer: {acceptedLinks[order.id].customer}
                         </button>
                         <button
                           type="button"
                           onClick={() => copyToClipboard(acceptedLinks[order.id].driver, "Driver Navigation Link")}
-                          className="w-full text-left p-1.5 rounded bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-mono text-emerald-800 truncate block"
+                          className="w-full text-left p-1.5 rounded bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-mono text-emerald-800 truncate block cursor-pointer"
                         >
                           🚚 Driver: {acceptedLinks[order.id].driver}
                         </button>
@@ -256,19 +286,41 @@ export default function PosLiveOrdersPage() {
                 </div>
 
                 {/* Footer Action */}
-                <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">Order Total</span>
                     <span className="font-mono text-base font-black text-emerald-700">₹{Number(order.total).toFixed(0)}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void acceptOrder(order.id, order.type)}
-                    className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition flex items-center gap-1.5"
-                  >
-                    <Check className="h-4 w-4 stroke-[3]" />
-                    <span>Accept & Assign Driver</span>
-                  </button>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {order.status !== "READY" ? (
+                      <button
+                        type="button"
+                        onClick={() => void updateStatus(order.id, "READY")}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        <span>Order Ready</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void updateStatus(order.id, "COMPLETED")}
+                        className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>Dispatched</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => void acceptOrder(order.id, order.type)}
+                      className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Assign Driver</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -278,4 +330,3 @@ export default function PosLiveOrdersPage() {
     </div>
   );
 }
-
