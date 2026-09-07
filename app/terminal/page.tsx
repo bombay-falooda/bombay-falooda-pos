@@ -154,6 +154,18 @@ export default function PosTerminalPage() {
 
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== "undefined") {
+      const savedType = localStorage.getItem("pos_printer_type");
+      if (savedType === "BLUETOOTH" || savedType === "CABLE") {
+        setPrinterConnectionType(savedType);
+      }
+      const savedName = localStorage.getItem("pos_printer_name");
+      if (savedName) setPrinterName(savedName);
+      const savedIp = localStorage.getItem("pos_printer_ip");
+      if (savedIp) setPrinterIp(savedIp);
+      const savedPaper = localStorage.getItem("pos_printer_paper");
+      if (savedPaper) setPaperWidth(savedPaper);
+    }
     const token = getPosToken();
     const savedContext = getSavedPosContext();
     if (!token || !savedContext) {
@@ -163,6 +175,52 @@ export default function PosTerminalPage() {
     setContext(savedContext);
     void loadTerminal();
   }, [router]);
+
+  async function savePrinterSettings() {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos_printer_type", printerConnectionType);
+      localStorage.setItem("pos_printer_name", printerName);
+      localStorage.setItem("pos_printer_ip", printerIp);
+      localStorage.setItem("pos_printer_paper", paperWidth);
+    }
+    try {
+      await apiRequest("/pos-terminal/printer-settings", {
+        method: "PATCH",
+        body: { printerName, printerIp, paperWidth },
+      });
+    } catch {
+      // Local persistence intact
+    }
+    setShowSettingsDrawer(false);
+    setMessage(`Printer config saved (${printerConnectionType === "BLUETOOTH" ? "Bluetooth Wireless Mode" : "USB Cable / Windows Mode"})`);
+  }
+
+  async function testPrinterConnection() {
+    if (printerConnectionType === "BLUETOOTH") {
+      if (!btDeviceName) {
+        setError("No Bluetooth printer paired. Please click 'Pair Bluetooth Thermal Printer' first.");
+        return;
+      }
+      await triggerThermalPrint("BOTH", {
+        id: "test-bill",
+        billNumber: "TEST-001",
+        status: "FINALIZED",
+        subtotal: 70,
+        discount: 0,
+        total: 70,
+        customerName: "Test Customer",
+        createdAt: new Date().toISOString(),
+        orderType: "TAKEAWAY",
+        items: [{ id: "test-item-1", name: "Pista Falooda (Test)", quantity: 1, unitPrice: 70, total: 70 }],
+        kotTickets: [{ id: "test-kot-1", kotNumber: "TEST-1", createdAt: new Date().toISOString() }],
+        payments: [],
+      });
+      setMessage(`Sent Bluetooth test receipt to ${btDeviceName}`);
+    } else {
+      setMessage("Triggering USB Cable / Windows driver test print...");
+      setTimeout(() => window.print(), 250);
+    }
+  }
 
   async function loadTerminal() {
     try {
@@ -1839,26 +1897,17 @@ export default function PosTerminalPage() {
             <div className="pt-3 border-t flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  if (printerConnectionType === "BLUETOOTH") {
-                    void triggerThermalPrint("BOTH");
-                  } else {
-                    window.print();
-                  }
-                }}
-                className="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
+                onClick={() => void testPrinterConnection()}
+                className="flex-1 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Print Test Receipt
+                <span>🧪 Test Connection</span>
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowSettingsDrawer(false);
-                  setMessage(`Printer set to ${printerConnectionType === "BLUETOOTH" ? "Bluetooth Wireless Mode" : "USB Cable / Windows Driver Mode"}`);
-                }}
-                className="flex-1 py-2 rounded-lg bg-[#b82e46] hover:bg-[#a8253b] text-white text-xs font-bold shadow-md transition cursor-pointer"
+                onClick={() => void savePrinterSettings()}
+                className="flex-1 py-2.5 rounded-lg bg-[#b82e46] hover:bg-[#a8253b] text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Save Settings
+                <span>💾 Save Printer Config</span>
               </button>
             </div>
           </div>
