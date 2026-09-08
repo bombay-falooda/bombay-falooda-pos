@@ -2112,8 +2112,17 @@ export default function PosTerminalPage() {
                       {activeBill?.kotTickets?.[0]?.kotNumber ? `KOT - ${activeBill.kotTickets[0].kotNumber.replace("KOT-", "")}` : `KOT - ${activeBill?.kotTickets?.length ? activeBill.kotTickets.length : "1"}`}
                     </div>
                     {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
-                      <div style={{ fontSize: "12px", fontWeight: "900", marginTop: "2px" }}>
-                        {activeBill.order.source === "ZOMATO" ? "Zomato" : activeBill.order.source === "SWIGGY" ? "Swiggy" : activeBill.order.source} : {activeBill.order.id ? activeBill.order.id.slice(-12) : "247835229110578"}
+                      <div style={{ fontSize: "12px", fontWeight: "700", marginTop: "2px" }}>
+                        {(() => {
+                          const fullId = activeBill.order?.id || "247835229110578";
+                          const mainPart = fullId.slice(0, -4);
+                          const last4 = fullId.slice(-4);
+                          return (
+                            <>
+                              {activeBill.order?.source === "ZOMATO" ? "Zomato" : activeBill.order?.source === "SWIGGY" ? "Swiggy" : activeBill.order?.source} : {mainPart}<span style={{ fontWeight: "900", fontSize: "15px" }}>{last4}</span>
+                            </>
+                          );
+                        })()}
                       </div>
                     ) : null}
                     <div style={{ fontSize: "13px", fontWeight: "900", textTransform: "uppercase", marginTop: "2px" }}>
@@ -2258,11 +2267,20 @@ export default function PosTerminalPage() {
                   {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
                     <>
                       <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
-                      <div style={{ fontSize: "11px", fontWeight: "800", lineHeight: "1.3" }}>
-                        <div>From {activeBill.order.source === "ZOMATO" ? "Zomato" : activeBill.order.source === "SWIGGY" ? "Swiggy" : activeBill.order.source}[{activeBill.order.id ? activeBill.order.id.slice(-10) : "8577852406"}]</div>
-                        <div style={{ fontSize: "13px", fontWeight: "900", margin: "2px 0" }}>
-                          OTP: {activeBill.order.id ? activeBill.order.id.slice(-4) : "3172"}
-                        </div>
+                      <div style={{ fontSize: "11px", fontWeight: "700", lineHeight: "1.3" }}>
+                        {(() => {
+                          const fullId = activeBill.order?.id || "8577852406";
+                          const mainPart = fullId.slice(0, -4);
+                          const last4 = fullId.slice(-4);
+                          return (
+                            <>
+                              <div>From {activeBill.order?.source === "ZOMATO" ? "Zomato" : activeBill.order?.source === "SWIGGY" ? "Swiggy" : activeBill.order?.source}[{mainPart}<span style={{ fontWeight: "900", fontSize: "14px" }}>{last4}</span>]</div>
+                              <div style={{ fontSize: "14px", fontWeight: "900", margin: "2px 0" }}>
+                                OTP: <span style={{ fontWeight: "900", fontSize: "16px" }}>{last4}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
                         {activeBill.customerName && <div>Name: {activeBill.customerName}</div>}
                         <div>Adr: {activeBill.order.deliveryAddress || "Alwa Naka, Vadodara Vadodara India"}</div>
                       </div>
