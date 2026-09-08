@@ -119,6 +119,13 @@ export type Bill = {
     id: string;
     name: string;
   };
+  order?: {
+    id: string;
+    source: string;
+    status: string;
+    deliveryAddress?: string | null;
+    notes?: string | null;
+  } | null;
   items: Array<{
     id: string;
     name: string;
