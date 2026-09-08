@@ -49,65 +49,86 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
-    <div id="print-ticket-root" className="print-ticket">
-      <div className="text-center pb-2 border-b border-black mb-2">
-        <img
-          src="/bombay-logo.png"
-          alt="Bombay Falooda"
-          className="print-logo mx-auto h-12 w-12 object-contain mb-1"
-        />
-        <h2 className="text-sm font-black uppercase tracking-wider">BOMBAY FALOODA</h2>
-        <p className="text-[10px] font-bold">Store Outlet Terminal</p>
+    <div id="print-ticket-root" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+      <div style={{ textAlign: "center", lineHeight: "1.25" }}>
+        <div style={{ fontWeight: "900", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
+          {bill.outlet?.name || "Bombay Falooda"}
+        </div>
+        <div style={{ fontSize: "10px", fontWeight: "normal", padding: "0 2px" }}>
+          {bill.outlet?.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
+        </div>
+        <div style={{ fontSize: "10px", fontWeight: "normal", marginTop: "1px" }}>
+          M. {(bill.outlet as any)?.phone || "9574754173"}
+        </div>
       </div>
 
-      <div className="text-[10px] space-y-0.5 border-b border-black pb-2 mb-2">
-        <div className="flex justify-between font-bold">
-          <span>Bill: {bill.billNumber}</span>
-          <span>{bill.orderType?.replace("_", " ") || "TAKEAWAY"}</span>
+      <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.3" }}>
+        {bill.customerName && (
+          <div style={{ fontWeight: "bold" }}>Name: {bill.customerName}</div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>Date: {formatDate(bill.createdAt).split(",")[0] || new Date().toLocaleDateString("en-GB")}</span>
+          <span>{formatDate(bill.createdAt).split(",")[1] || new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+          <span style={{ fontWeight: "bold" }}>
+            {bill.orderType === "DINE_IN" ? "Dine In" : bill.orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
+          </span>
         </div>
-        <div className="flex justify-between">
-          <span>Date: {formatDate(bill.createdAt)}</span>
-          <span>Pay: {bill.paymentMethod || "CASH"}</span>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>Cashier: {bill.posDevice?.name || "biller"}</span>
+          <span style={{ fontWeight: "bold" }}>
+            Bill No.: {bill.billNumber ? bill.billNumber.replace("BILL-", "") : "1"}
+          </span>
         </div>
-        <p>Customer: {bill.customerName || "Walk-in"} {bill.customerPhone ? `(${bill.customerPhone})` : ""}</p>
+        <div style={{ fontWeight: "bold" }}>
+          Token No.: {bill.kotTickets?.[0]?.kotNumber ? bill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
+        </div>
       </div>
 
-      <table className="w-full text-[10px] text-left border-b border-black pb-2 mb-2">
+      <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
+
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
         <thead>
-          <tr className="border-b border-black text-xs font-bold">
-            <th className="py-1">Item</th>
-            <th className="py-1 text-center">Qty</th>
-            <th className="py-1 text-right">Amt</th>
+          <tr style={{ borderBottom: "1px dashed #000" }}>
+            <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "bold" }}>No.Item</th>
+            <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "bold" }}>Qty.</th>
+            <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "bold" }}>Price</th>
+            <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "bold" }}>Amount</th>
           </tr>
         </thead>
         <tbody>
-          {bill.items.map((item) => (
-            <tr key={item.id} className="border-b border-gray-300/50">
-              <td className="py-1 font-bold">
-                {item.name}
-                {item.addons?.length ? (
-                  <span className="block text-[8px] font-normal text-gray-700">
-                    + {item.addons.map((a) => a.name).join(", ")}
-                  </span>
-                ) : null}
+          {bill.items.map((item, idx) => (
+            <tr key={item.id} style={{ verticalAlign: "top" }}>
+              <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "bold", paddingRight: "4px" }}>
+                {idx + 1} {item.name}
+                {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
+                  <div style={{ fontSize: "10px", fontWeight: "normal", color: "#333" }}>
+                    ({item.addons.map((a: any) => a.name).join(", ")})
+                  </div>
+                )}
               </td>
-              <td className="py-1 text-center">{item.quantity}</td>
-              <td className="py-1 text-right font-bold">₹{Number(item.total).toFixed(2)}</td>
+              <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "normal" }}>{item.quantity}</td>
+              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "normal" }}>{Number(item.unitPrice).toFixed(2)}</td>
+              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "bold" }}>{Number(item.total).toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="text-[11px] font-black space-y-1 text-right border-b border-black pb-2 mb-2">
-        <div className="flex justify-between">
-          <span>Total Payable:</span>
-          <span className="text-sm">INR {Number(bill.total).toFixed(2)}</span>
+      <div style={{ borderTop: "1px dashed #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+          <span>Total Qty: {bill.items.reduce((sum, i) => sum + i.quantity, 0)}</span>
+          <span>Sub Total  {Number(bill.subtotal).toFixed(2)}</span>
         </div>
       </div>
 
-      <div className="text-center text-[10px] pt-1 font-bold">
-        <p>Thank you for visiting Bombay Falooda!</p>
-        <p className="text-[8px] font-normal mt-0.5">Please visit again 🍨</p>
+      <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "15px" }}>
+        <span>Grand Total</span>
+        <span>₹ {Number(bill.total).toFixed(2)}</span>
+      </div>
+
+      <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "bold", lineHeight: "1.4" }}>
+        <div>Thank You Visit Again</div>
+        <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "bold" }}>"Please wait for 10 minutes after ordering."</div>
       </div>
     </div>,
     document.body
