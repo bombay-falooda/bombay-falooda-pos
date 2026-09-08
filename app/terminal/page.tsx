@@ -2156,34 +2156,34 @@ export default function PosTerminalPage() {
                 <div style={{ paddingTop: printMode === "BOTH" ? "8px" : "0", fontFamily: "'Courier New', Courier, monospace" }}>
                   <div style={{ textAlign: "center", lineHeight: "1.25" }}>
                     <div style={{ fontWeight: "900", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
-                      {context?.outlet?.name || "Bombay Falooda"}
+                      Bombay Falooda
                     </div>
-                    <div style={{ fontSize: "10px", fontWeight: "normal", padding: "0 2px" }}>
+                    <div style={{ fontSize: "10px", fontWeight: "600", padding: "0 2px" }}>
                       {context?.outlet?.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
                     </div>
-                    <div style={{ fontSize: "10px", fontWeight: "normal", marginTop: "1px" }}>
+                    <div style={{ fontSize: "10px", fontWeight: "600", marginTop: "1px" }}>
                       M. {(context?.outlet as any)?.phone || "9574754173"}
                     </div>
                   </div>
 
                   <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.3" }}>
                     {activeBill?.customerName && (
-                      <div style={{ fontWeight: "bold" }}>Name: {activeBill.customerName}</div>
+                      <div style={{ fontWeight: "800" }}>Name: {activeBill.customerName}</div>
                     )}
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
-                      <span>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ fontWeight: "bold" }}>
+                      <span style={{ fontWeight: "600" }}>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                      <span style={{ fontWeight: "600" }}>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ fontWeight: "800" }}>
                         {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Cashier: {(context as any)?.device?.name || "biller"}</span>
-                      <span style={{ fontWeight: "bold" }}>
+                      <span style={{ fontWeight: "600" }}>Cashier: {(context as any)?.device?.name || "biller"}</span>
+                      <span style={{ fontWeight: "800" }}>
                         Bill No.: {activeBill?.billNumber ? activeBill.billNumber.replace("BILL-", "") : "1"}
                       </span>
                     </div>
-                    <div style={{ fontWeight: "bold" }}>
+                    <div style={{ fontWeight: "800" }}>
                       Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
                     </div>
                   </div>
@@ -2193,10 +2193,10 @@ export default function PosTerminalPage() {
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px dashed #000" }}>
-                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "bold" }}>No.Item</th>
-                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "bold" }}>Qty.</th>
-                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "bold" }}>Price</th>
-                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "bold" }}>Amount</th>
+                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "800" }}>No.Item</th>
+                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "800" }}>Qty.</th>
+                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "800" }}>Price</th>
+                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "800" }}>Amount</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2206,17 +2206,17 @@ export default function PosTerminalPage() {
                         const itemTotal = Number(item.total || unitPrice * qty);
                         return (
                           <tr key={idx} style={{ verticalAlign: "top" }}>
-                            <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "bold", paddingRight: "4px" }}>
+                            <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "800", paddingRight: "4px" }}>
                               {idx + 1} {item.name}
                               {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                                <div style={{ fontSize: "10px", fontWeight: "normal", color: "#333" }}>
+                                <div style={{ fontSize: "10px", fontWeight: "600", color: "#000" }}>
                                   ({item.addons.map((a: any) => a.name).join(", ")})
                                 </div>
                               )}
                             </td>
-                            <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "normal" }}>{qty}</td>
-                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "normal" }}>{unitPrice.toFixed(2)}</td>
-                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "bold" }}>{itemTotal.toFixed(2)}</td>
+                            <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "700" }}>{qty}</td>
+                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "700" }}>{unitPrice.toFixed(2)}</td>
+                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "800" }}>{itemTotal.toFixed(2)}</td>
                           </tr>
                         );
                       })}
@@ -2224,7 +2224,7 @@ export default function PosTerminalPage() {
                   </table>
 
                   <div style={{ borderTop: "1px dashed #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800" }}>
                       <span>Total Qty: {(activeBill?.items || cart).reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)}</span>
                       <span>Sub Total  {Number(activeBill?.subtotal || payableTotal).toFixed(2)}</span>
                     </div>
@@ -2235,9 +2235,9 @@ export default function PosTerminalPage() {
                     <span>₹ {Number(activeBill?.total || payableTotal).toFixed(2)}</span>
                   </div>
 
-                  <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "bold", lineHeight: "1.4" }}>
+                  <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "800", lineHeight: "1.4" }}>
                     <div>Thank You Visit Again</div>
-                    <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "bold" }}>"Please wait for 10 minutes after ordering."</div>
+                    <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "800" }}>"Please wait for 10 minutes after ordering."</div>
                   </div>
                 </div>
               ) : null}
