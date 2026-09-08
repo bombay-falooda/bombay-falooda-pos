@@ -37,6 +37,7 @@ export default function PosShiftPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showEndAudit, setShowEndAudit] = useState(false);
 
   useEffect(() => {
     const token = getPosToken();
@@ -165,29 +166,34 @@ export default function PosShiftPage() {
           </div>
         )}
 
-        {/* GST 70% Bill Printing Compliance Banner */}
-        <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs">📜 GST POLICY</span>
-              <h3 className="font-extrabold text-sm text-white">70% Bill Printing Compliance Audit</h3>
+        {/* GST 70% Bill Printing Compliance Banner - Only shown when user clicks to End Day */}
+        {showEndAudit && (
+          <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs">📜 GST POLICY</span>
+                <h3 className="font-extrabold text-sm text-white">70% Bill Printing Compliance Audit</h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                Shift Total: <span className="font-mono text-white font-bold">₹{summary?.totalSales?.toLocaleString('en-IN') || 0}</span> |
+                Printed: <span className="font-mono text-emerald-400 font-bold">₹{((summary as any)?.printedSalesAmount || 0).toLocaleString('en-IN')}</span> |
+                Ratio: <span className="font-mono text-amber-400 font-bold">{(summary as any)?.printComplianceRatio || 100}%</span>
+              </p>
+              <p className="text-[11px] text-amber-300/90 font-medium">
+                Please ensure required bills are printed before final register closure.
+              </p>
             </div>
-            <p className="text-xs text-slate-400">
-              Shift Total: <span className="font-mono text-white font-bold">₹{summary?.totalSales?.toLocaleString('en-IN') || 0}</span> |
-              Printed: <span className="font-mono text-emerald-400 font-bold">₹{((summary as any)?.printedSalesAmount || 0).toLocaleString('en-IN')}</span> |
-              Ratio: <span className="font-mono text-amber-400 font-bold">{(summary as any)?.printComplianceRatio || 100}%</span>
-            </p>
-          </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <Link
-              href="/terminal/gst-compliance"
-              className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition text-center shadow-lg shadow-amber-500/20"
-            >
-              Open GST Batch Bill Printer 🖨️
-            </Link>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <Link
+                href="/terminal/gst-compliance"
+                className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition text-center shadow-lg shadow-amber-500/20"
+              >
+                Open GST Batch Bill Printer 🖨️
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Start Day Card */}
@@ -213,7 +219,8 @@ export default function PosShiftPage() {
                     type="number"
                     value={openingFloat}
                     onChange={(e) => setOpeningFloat(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-slate-300 pl-7 pr-3 text-sm font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                    disabled={shiftStatus === "OPEN"}
+                    className="w-full h-10 rounded-lg border border-slate-300 pl-7 pr-3 text-sm font-mono font-bold text-slate-800 outline-none focus:border-orange-500 disabled:bg-slate-100 disabled:text-slate-400"
                     placeholder="500"
                   />
                 </div>
@@ -223,7 +230,7 @@ export default function PosShiftPage() {
                 type="button"
                 disabled={loading || shiftStatus === "OPEN"}
                 onClick={handleStartDay}
-                className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-2xs transition disabled:opacity-50"
+                className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-2xs transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {shiftStatus === "OPEN" ? "Day Already Started" : "Confirm Start Day"}
               </button>
@@ -272,14 +279,37 @@ export default function PosShiftPage() {
                 />
               </div>
 
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleEndDay}
-                className="w-full py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-2xs transition disabled:opacity-50"
-              >
-                Close Day Register & Generate Z-Report
-              </button>
+              {!showEndAudit ? (
+                <button
+                  type="button"
+                  disabled={loading || shiftStatus === "CLOSED"}
+                  onClick={() => setShowEndAudit(true)}
+                  className="w-full py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-2xs transition disabled:opacity-50"
+                >
+                  {shiftStatus === "CLOSED" ? "Shift is Already Closed" : "End Day & Review Compliance"}
+                </button>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      await handleEndDay();
+                      setShowEndAudit(false);
+                    }}
+                    className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-2xs transition disabled:opacity-50"
+                  >
+                    {loading ? "Closing Register..." : "Confirm & Finalize Close Day (Z-Report)"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEndAudit(false)}
+                    className="w-full py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-xs transition"
+                  >
+                    Cancel / Back
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
