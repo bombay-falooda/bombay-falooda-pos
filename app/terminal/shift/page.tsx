@@ -53,8 +53,12 @@ export default function PosShiftPage() {
     try {
       setLoading(true);
       setError("");
-      const data = await apiRequest<ShiftSummary>("/pos-terminal/shift-summary");
-      setSummary(data);
+      const [shiftData, dayStatus] = await Promise.all([
+        apiRequest<ShiftSummary>("/pos-terminal/shift-summary"),
+        apiRequest<{ active: boolean; businessDay: any }>("/pos-terminal/day/current").catch(() => ({ active: false, businessDay: null })),
+      ]);
+      setSummary(shiftData);
+      setShiftStatus(dayStatus.active ? "OPEN" : "CLOSED");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load shift summary");
     } finally {
@@ -67,15 +71,16 @@ export default function PosShiftPage() {
       setLoading(true);
       setError("");
       setMessage("");
-      const res = await apiRequest<{ message: string; shiftStatus: "OPEN" }>("/pos-terminal/shift/start", {
+      const res = await apiRequest<{ message: string; status: "OPEN" | "CLOSED" }>("/pos-terminal/shift/start", {
         method: "POST",
         body: { openingFloat: Number(openingFloat || 0) },
       });
       setShiftStatus("OPEN");
-      setMessage(res.message);
+      setMessage(res.message || "Shift / Day Started Successfully");
+      void fetchShiftSummary();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start shift day");
-    } fontinally: {
+    } finally {
       setLoading(false);
     }
   }
@@ -85,15 +90,15 @@ export default function PosShiftPage() {
       setLoading(true);
       setError("");
       setMessage("");
-      const res = await apiRequest<{ message: string; shiftStatus: "CLOSED" }>("/pos-terminal/shift/end", {
+      const res = await apiRequest<{ message: string; status: "OPEN" | "CLOSED" }>("/pos-terminal/shift/end", {
         method: "POST",
         body: {
-          closingCash: Number(actualCash || 0),
-          notes,
+          closingNotes: notes,
         },
       });
       setShiftStatus("CLOSED");
-      setMessage(res.message);
+      setMessage(res.message || "Day Ended. Z-Report generated.");
+      void fetchShiftSummary();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to close shift day");
     } finally {

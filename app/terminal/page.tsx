@@ -133,6 +133,7 @@ export default function PosTerminalPage() {
 
   // Shift Day State
   const [openingFloat, setOpeningFloat] = useState("500");
+  const [shiftClosingNotes, setShiftClosingNotes] = useState("");
   const [shiftStatus, setShiftStatus] = useState<"OPEN" | "CLOSED">("OPEN");
 
   // Settings State
@@ -175,6 +176,45 @@ export default function PosTerminalPage() {
     setContext(savedContext);
     void loadTerminal();
   }, [router]);
+
+  async function handleStartShift() {
+    try {
+      setBusy(true);
+      setError("");
+      setMessage("");
+      const res = await apiRequest<{ success: boolean; status: "OPEN" | "CLOSED"; message: string }>("/pos-terminal/shift/start", {
+        method: "POST",
+        body: { openingFloat: Number(openingFloat || 0) },
+      });
+      setShiftStatus("OPEN");
+      setMessage(res.message || "Shift / Day Started Successfully");
+      void loadTerminal();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start shift");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCloseShift() {
+    try {
+      setBusy(true);
+      setError("");
+      setMessage("");
+      const res = await apiRequest<{ success: boolean; status: "OPEN" | "CLOSED"; message: string }>("/pos-terminal/shift/end", {
+        method: "POST",
+        body: { closingNotes: shiftClosingNotes },
+      });
+      setShiftStatus("CLOSED");
+      setMessage(res.message || "End of Day Shift Closed. Z-Report Printed.");
+      void loadTerminal();
+      setTimeout(() => window.print(), 300);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to close shift");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function savePrinterSettings() {
     if (typeof window !== "undefined") {
@@ -224,16 +264,20 @@ export default function PosTerminalPage() {
 
   async function loadTerminal() {
     try {
-      const [menu, held, digitalOrders, shift] = await Promise.all([
+      const [menu, held, digitalOrders, shift, dayStatus] = await Promise.all([
         apiRequest<MenuCategory[]>("/pos-terminal/menu"),
         apiRequest<Bill[]>("/pos-terminal/bills/held"),
         apiRequest<DigitalOrder[]>("/pos-terminal/orders"),
         apiRequest<ShiftSummary>("/pos-terminal/shift-summary"),
+        apiRequest<{ active: boolean; businessDay: any }>("/pos-terminal/day/current").catch(() => ({ active: false, businessDay: null })),
       ]);
       setCategories(menu);
       setHeldBills(held);
       setOrders(digitalOrders);
       setSummary(shift);
+      if (dayStatus) {
+        setShiftStatus(dayStatus.active ? "OPEN" : "CLOSED");
+      }
       if (menu.length > 0 && selectedCategory === "all") {
         setSelectedCategory(menu[0].id);
       }
@@ -1719,18 +1763,17 @@ export default function PosTerminalPage() {
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">Shift Closing Notes</label>
                     <textarea
                       placeholder="Enter shift handover notes..."
+                      value={shiftClosingNotes}
+                      onChange={(e) => setShiftClosingNotes(e.target.value)}
                       className="w-full h-20 rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10"
                     />
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setShiftStatus("CLOSED");
-                      setMessage("End of Day Shift Closed. Z-Report Printed.");
-                      setTimeout(() => window.print(), 300);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition cursor-pointer"
+                    disabled={busy}
+                    onClick={() => void handleCloseShift()}
+                    className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition cursor-pointer disabled:opacity-60 active:scale-[0.98]"
                   >
                     Close Shift & Print End of Day Z-Report
                   </button>
@@ -1749,11 +1792,9 @@ export default function PosTerminalPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setShiftStatus("OPEN");
-                      setMessage("Day Started successfully with Opening Float ₹" + openingFloat);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition cursor-pointer"
+                    disabled={busy}
+                    onClick={() => void handleStartShift()}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition cursor-pointer disabled:opacity-60 active:scale-[0.98]"
                   >
                     Start Day Shift Register
                   </button>
