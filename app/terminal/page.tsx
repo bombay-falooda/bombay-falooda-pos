@@ -1002,33 +1002,35 @@ export default function PosTerminalPage() {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`relative min-h-[86px] sm:min-h-[92px] p-2.5 sm:p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
+                      className={`relative min-h-[90px] sm:min-h-[96px] p-2.5 sm:p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
                         inCartCount > 0
                           ? "border-2 border-[#b82e46]/60 bg-rose-50/30 shadow-xs"
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-md"
                       }`}
                     >
-                      {/* Top Title Bar */}
-                      <div className="flex items-start justify-between gap-1 pb-1">
-                        <span className="font-bold text-[11px] sm:text-xs text-slate-800 group-hover:text-[#991b32] transition-colors leading-snug line-clamp-2">
-                          {item.name}
-                        </span>
-                        {uniqueAddons.length > 0 && (
-                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/70 shrink-0">
-                            +Toppings
+                      {/* Top Title Bar - Full name wrapping without truncation */}
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-1.5">
+                          <span className="font-bold text-[11.5px] sm:text-xs text-slate-900 group-hover:text-[#991b32] transition-colors leading-snug break-words">
+                            {item.name}
                           </span>
+                          {uniqueAddons.length > 0 && (
+                            <span className="text-[8.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/70 shrink-0 self-start">
+                              +Toppings
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Description if present */}
+                        {item.description && (
+                          <p className="text-[10px] text-slate-400 leading-tight">
+                            {item.description}
+                          </p>
                         )}
                       </div>
 
-                      {/* Description if present */}
-                      {item.description && (
-                        <p className="text-[10px] text-slate-400 line-clamp-1 my-0.5">
-                          {item.description}
-                        </p>
-                      )}
-
                       {/* Bottom Price Footer */}
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between shrink-0">
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between shrink-0 mt-1">
                         <div className="flex items-center gap-1">
                           <span className="font-mono text-xs sm:text-sm font-black text-slate-900">
                             ₹{Number(item.price).toFixed(0)}
