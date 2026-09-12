@@ -191,7 +191,7 @@ export default function PosShiftPage() {
 
                       <div className="space-y-2">
                         <Link
-                          href="/terminal/gst-compliance"
+                          href="/terminal/bill-printing"
                           className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-sm"
                         >
                           <Printer className="h-4 w-4" />
