@@ -31,9 +31,10 @@ export async function requestNotificationPermission(): Promise<string | null> {
 
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
+      const key = urlBase64ToUint8Array(VAPID_KEY);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_KEY),
+        applicationServerKey: key.buffer as ArrayBuffer,
       });
     }
 
