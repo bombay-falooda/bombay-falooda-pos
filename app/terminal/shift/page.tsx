@@ -166,121 +166,91 @@ export default function PosShiftPage() {
           </div>
         )}
 
-        {/* Modal Dialog for End Day & 70% Compliance Audit */}
+        {/* Clean Minimal Modal for End Day & Bill Print Check */}
         {showEndAudit && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden text-slate-900 animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden text-slate-900 animate-in zoom-in-95 duration-150">
               {(() => {
                 const totalSales = Number(summary?.totalSales || 0);
                 const printed = Number((summary as any)?.printedSalesAmount || 0);
                 const target70 = Math.ceil(totalSales * 0.7);
                 const deficit = Math.max(0, target70 - printed);
-                const ratio = (summary as any)?.printComplianceRatio || (totalSales > 0 ? ((printed / totalSales) * 100).toFixed(1) : 100);
                 const isCompliant = deficit === 0 || (summary as any)?.canCloseDay;
 
-                return (
-                  <div>
-                    {/* Modal Header */}
-                    <div className={`p-5 text-center ${isCompliant ? "bg-emerald-600 text-white" : "bg-amber-500 text-slate-950"}`}>
-                      <div className="inline-flex p-3 rounded-full bg-white/20 mb-2">
-                        {isCompliant ? <CheckCircle2 className="h-8 w-8 text-white" /> : <AlertTriangle className="h-8 w-8 text-slate-950" />}
+                if (!isCompliant) {
+                  return (
+                    <div className="p-6 space-y-5 text-center">
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                        <p className="text-base font-bold text-slate-900 leading-snug">
+                          <span className="font-mono text-xl text-slate-950 font-extrabold block mb-1">
+                            ₹{deficit.toLocaleString("en-IN")}
+                          </span>
+                          amount of bill printing is left to print.
+                        </p>
                       </div>
-                      <h3 className="font-extrabold text-base">
-                        {isCompliant ? "70% GST Compliance Met!" : "Bill Printing Required"}
-                      </h3>
-                      <p className="text-xs opacity-90 mt-0.5">
-                        {isCompliant ? "Register is ready for final day closure" : "Action needed before closing register"}
-                      </p>
-                    </div>
 
-                    {/* Modal Body */}
-                    <div className="p-6 space-y-4 text-center">
-                      {!isCompliant ? (
-                        <div className="space-y-3">
-                          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                            <span className="text-xs text-amber-800 font-semibold uppercase tracking-wider block">Remaining to Print</span>
-                            <span className="text-2xl font-black text-amber-950 font-mono mt-1 block">
-                              ₹{deficit.toLocaleString("en-IN")}
-                            </span>
-                            <p className="text-xs text-amber-800/90 font-medium mt-1">
-                              ₹{deficit.toLocaleString("en-IN")} amount bill printing is left to reach the 70% GST target.
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-2 text-center text-xs py-2 bg-slate-50 rounded-xl border border-slate-100 font-mono">
-                            <div>
-                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Total Sales</span>
-                              <span className="font-bold text-slate-800">₹{totalSales.toLocaleString("en-IN")}</span>
-                            </div>
-                            <div className="border-x border-slate-200">
-                              <span className="text-[10px] text-slate-400 uppercase font-bold block">70% Target</span>
-                              <span className="font-bold text-slate-800">₹{target70.toLocaleString("en-IN")}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Printed (Ratio)</span>
-                              <span className="font-bold text-emerald-600">{ratio}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-                            <span className="text-xs text-emerald-800 font-semibold uppercase tracking-wider block">Printed Sales Ratio</span>
-                            <span className="text-3xl font-black text-emerald-700 font-mono mt-1 block">
-                              {ratio}%
-                            </span>
-                            <p className="text-xs text-emerald-800 font-medium mt-1">
-                              Official Billed: ₹{printed.toLocaleString("en-IN")} / ₹{totalSales.toLocaleString("en-IN")}
-                            </p>
-                          </div>
-
-                          <div className="text-left space-y-2 pt-2 border-t border-slate-100">
-                            <label className="block text-xs font-bold text-slate-700">
-                              Physical Cash in Drawer (₹)
-                            </label>
-                            <input
-                              type="number"
-                              value={actualCash}
-                              onChange={(e) => setActualCash(e.target.value)}
-                              className="w-full h-10 rounded-lg border border-slate-300 px-3 text-sm font-mono font-bold text-slate-800 outline-none focus:border-slate-900"
-                              placeholder="Enter physical cash in drawer"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="space-y-2 pt-2">
-                        {!isCompliant ? (
-                          <Link
-                            href="/terminal/gst-compliance"
-                            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
-                          >
-                            <Printer className="h-4 w-4" />
-                            <span>Print Remaining ₹{deficit.toLocaleString("en-IN")} Bills Now 🖨️</span>
-                          </Link>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={loading}
-                            onClick={async () => {
-                              await handleEndDay();
-                              setShowEndAudit(false);
-                            }}
-                            className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-600/20 transition disabled:opacity-50"
-                          >
-                            {loading ? "Closing Register..." : "Confirm & Finalize Close Day (Z-Report)"}
-                          </button>
-                        )}
+                      <div className="space-y-2">
+                        <Link
+                          href="/terminal/gst-compliance"
+                          className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-sm"
+                        >
+                          <Printer className="h-4 w-4" />
+                          <span>Go to Print Page</span>
+                        </Link>
 
                         <button
                           type="button"
                           onClick={() => setShowEndAudit(false)}
                           className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-xs transition"
                         >
-                          Cancel / Back
+                          Cancel
                         </button>
                       </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="p-6 space-y-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                      <p className="text-sm font-bold text-emerald-900">
+                        All required bills are printed. Ready to close shift.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 text-left">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Physical Cash in Drawer (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={actualCash}
+                        onChange={(e) => setActualCash(e.target.value)}
+                        className="w-full h-10 rounded-lg border border-slate-300 px-3 text-sm font-mono font-bold text-slate-800 outline-none focus:border-slate-900"
+                        placeholder="Enter cash in drawer"
+                      />
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={async () => {
+                          await handleEndDay();
+                          setShowEndAudit(false);
+                        }}
+                        className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md transition disabled:opacity-50"
+                      >
+                        {loading ? "Closing Shift..." : "Close Shift"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowEndAudit(false)}
+                        className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-xs transition"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 );
