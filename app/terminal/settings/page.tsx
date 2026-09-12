@@ -433,6 +433,9 @@ export default function PosSettingsPage() {
                   </button>
                 </div>
               ) : (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 space-y-1">
+                  <p className="font-bold text-slate-800">Windows Spooler / Chrome Kiosk Mode</p>
+                  <p>
                     Plug USB cable from thermal printer into PC. Uses default Windows printer driver or Chrome kiosk auto-print (<code className="bg-white px-1 py-0.5 rounded text-blue-600 border">--kiosk-printing</code>).
                   </p>
                 </div>
