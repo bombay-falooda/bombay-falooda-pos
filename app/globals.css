@@ -114,12 +114,12 @@ textarea {
     padding: 0 1mm !important;
     background: #ffffff !important;
     color: #000000 !important;
-    font-family: 'Courier New', Courier, monospace, Arial, sans-serif !important;
+    font-family: Arial, "Helvetica Neue", Helvetica, Roboto, sans-serif !important;
     font-size: 11px !important;
-    font-weight: 600 !important;
-    line-height: 1.3 !important;
-    -webkit-font-smoothing: none !important;
-    text-rendering: optimizeSpeed !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    -webkit-font-smoothing: antialiased !important;
+    text-rendering: optimizeLegibility !important;
     word-break: break-word !important;
   }
 
@@ -127,7 +127,7 @@ textarea {
     visibility: visible !important;
     box-sizing: border-box !important;
     color: #000000 !important;
-    -webkit-font-smoothing: none !important;
+    -webkit-font-smoothing: antialiased !important;
   }
 
   #print-ticket-root table {

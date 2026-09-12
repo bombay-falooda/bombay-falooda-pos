@@ -2218,18 +2218,17 @@ export default function PosTerminalPage() {
       )}
 
       {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
-      {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
       {mounted && typeof document !== "undefined"
         ? createPortal(
             <div id="print-ticket-root">
               {printMode === "KOT_ONLY" || printMode === "BOTH" ? (
-                <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "8px", fontFamily: "'Courier New', Courier, monospace" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "600", color: "#000", marginBottom: "2px" }}>
+                <div style={{ pageBreakAfter: printMode === "BOTH" ? "always" : "auto", paddingBottom: "8px", fontFamily: "Arial, 'Helvetica Neue', Helvetica, Roboto, sans-serif" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "400", color: "#000", marginBottom: "2px" }}>
                     {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}
                   </div>
 
                   <div style={{ textAlign: "center", margin: "4px 0 6px 0" }}>
-                    <div style={{ fontSize: "18px", fontWeight: "900", letterSpacing: "0.5px" }}>
+                    <div style={{ fontSize: "18px", fontWeight: "700", letterSpacing: "0.5px" }}>
                       {activeBill?.kotTickets?.[0]?.kotNumber ? `KOT - ${activeBill.kotTickets[0].kotNumber.replace("KOT-", "")}` : `KOT - ${activeBill?.kotTickets?.length ? activeBill.kotTickets.length : "1"}`}
                     </div>
                     {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
@@ -2240,13 +2239,13 @@ export default function PosTerminalPage() {
                           const last4 = fullId.slice(-4);
                           return (
                             <>
-                              {activeBill.order?.source === "ZOMATO" ? "Zomato" : activeBill.order?.source === "SWIGGY" ? "Swiggy" : activeBill.order?.source} : {mainPart}<span style={{ fontWeight: "900", fontSize: "15px" }}>{last4}</span>
+                              {activeBill.order?.source === "ZOMATO" ? "Zomato" : activeBill.order?.source === "SWIGGY" ? "Swiggy" : activeBill.order?.source} : {mainPart}<span style={{ fontWeight: "700", fontSize: "15px" }}>{last4}</span>
                             </>
                           );
                         })()}
                       </div>
                     ) : null}
-                    <div style={{ fontSize: "13px", fontWeight: "900", textTransform: "uppercase", marginTop: "2px" }}>
+                    <div style={{ fontSize: "13px", fontWeight: "700", textTransform: "uppercase", marginTop: "2px" }}>
                       {orderType === "DINE_IN" ? "DINE IN" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
                     </div>
                   </div>
@@ -2256,26 +2255,26 @@ export default function PosTerminalPage() {
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", margin: "4px 0" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px dashed #000" }}>
-                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "800" }}>No.Item</th>
-                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "35%", fontWeight: "800" }}>Special Note</th>
-                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "15%", fontWeight: "800" }}>Qty.</th>
+                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "400" }}>No.Item</th>
+                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "35%", fontWeight: "400" }}>Special Note</th>
+                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "15%", fontWeight: "400" }}>Qty.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(activeBill?.items || cart).map((item: any, idx: number) => (
                         <tr key={idx} style={{ verticalAlign: "top" }}>
-                          <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "800" }}>
+                          <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "400" }}>
                             {idx + 1} {item.name}
                             {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                              <div style={{ fontSize: "10px", fontWeight: "600", color: "#000" }}>
+                              <div style={{ fontSize: "10px", fontWeight: "400", color: "#000" }}>
                                 ({item.addons.map((a: any) => a.name).join(", ")})
                               </div>
                             )}
                           </td>
-                          <td style={{ textAlign: "center", paddingTop: "4px", fontSize: "10px", fontWeight: "600" }}>
+                          <td style={{ textAlign: "center", paddingTop: "4px", fontSize: "10px", fontWeight: "400" }}>
                             {item.notes ? item.notes : "--"}
                           </td>
-                          <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "800", fontSize: "12px" }}>
+                          <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "700", fontSize: "12px" }}>
                             {item.quantity || 1}
                           </td>
                         </tr>
@@ -2284,150 +2283,49 @@ export default function PosTerminalPage() {
                   </table>
 
                   <div style={{ borderTop: "1px dashed #000", marginTop: "6px" }} />
-
-                  {/* Online Aggregator Specific KOT Details */}
-                  {activeBill?.notes || activeBill?.order ? (
-                    <div style={{ marginTop: "6px", fontSize: "11px", lineHeight: "1.3" }}>
-                      {activeBill?.notes && (
-                        <div style={{ fontWeight: "900", marginBottom: "4px" }}>
-                          Customer Notes: {activeBill.notes}
-                        </div>
-                      )}
-                      <div style={{ fontWeight: "700" }}>
-                        Payment Status : {activeBill?.order ? "Online Paid" : "Paid"}
-                      </div>
-                      <div style={{ fontWeight: "700" }}>
-                        Prepare By : {new Date().toISOString().slice(0, 10)} {new Date().toLocaleTimeString("en-GB")}
-                      </div>
-                      <div style={{ fontWeight: "900", fontSize: "13px", marginTop: "4px" }}>
-                        Delivery Passcode : {activeBill?.order?.id ? activeBill.order.id.slice(-4) : "8990"}
-                      </div>
-
-                      <div style={{ textAlign: "center", marginTop: "8px" }}>
-                        <div style={{ fontSize: "10px", fontWeight: "800" }}>Scan to Mark food ready</div>
-                        {/* Barcode Graphic */}
-                        <div style={{ textAlign: "center", margin: "4px 0" }}>
-                          <svg viewBox="0 0 220 36" style={{ height: "32px", width: "85%", margin: "0 auto", display: "block" }}>
-                            <rect x="0" y="0" width="3" height="36" fill="#000" />
-                            <rect x="5" y="0" width="2" height="36" fill="#000" />
-                            <rect x="9" y="0" width="4" height="36" fill="#000" />
-                            <rect x="15" y="0" width="2" height="36" fill="#000" />
-                            <rect x="19" y="0" width="3" height="36" fill="#000" />
-                            <rect x="24" y="0" width="5" height="36" fill="#000" />
-                            <rect x="31" y="0" width="2" height="36" fill="#000" />
-                            <rect x="35" y="0" width="4" height="36" fill="#000" />
-                            <rect x="41" y="0" width="3" height="36" fill="#000" />
-                            <rect x="46" y="0" width="2" height="36" fill="#000" />
-                            <rect x="50" y="0" width="5" height="36" fill="#000" />
-                            <rect x="57" y="0" width="3" height="36" fill="#000" />
-                            <rect x="62" y="0" width="2" height="36" fill="#000" />
-                            <rect x="66" y="0" width="4" height="36" fill="#000" />
-                            <rect x="72" y="0" width="3" height="36" fill="#000" />
-                            <rect x="77" y="0" width="2" height="36" fill="#000" />
-                            <rect x="81" y="0" width="5" height="36" fill="#000" />
-                            <rect x="88" y="0" width="3" height="36" fill="#000" />
-                            <rect x="93" y="0" width="2" height="36" fill="#000" />
-                            <rect x="97" y="0" width="4" height="36" fill="#000" />
-                            <rect x="103" y="0" width="3" height="36" fill="#000" />
-                            <rect x="108" y="0" width="2" height="36" fill="#000" />
-                            <rect x="112" y="0" width="5" height="36" fill="#000" />
-                            <rect x="119" y="0" width="3" height="36" fill="#000" />
-                            <rect x="124" y="0" width="2" height="36" fill="#000" />
-                            <rect x="128" y="0" width="4" height="36" fill="#000" />
-                            <rect x="134" y="0" width="3" height="36" fill="#000" />
-                            <rect x="139" y="0" width="2" height="36" fill="#000" />
-                            <rect x="143" y="0" width="5" height="36" fill="#000" />
-                            <rect x="150" y="0" width="3" height="36" fill="#000" />
-                            <rect x="155" y="0" width="2" height="36" fill="#000" />
-                            <rect x="159" y="0" width="4" height="36" fill="#000" />
-                            <rect x="165" y="0" width="3" height="36" fill="#000" />
-                            <rect x="170" y="0" width="2" height="36" fill="#000" />
-                            <rect x="174" y="0" width="5" height="36" fill="#000" />
-                            <rect x="181" y="0" width="3" height="36" fill="#000" />
-                            <rect x="186" y="0" width="2" height="36" fill="#000" />
-                            <rect x="190" y="0" width="4" height="36" fill="#000" />
-                            <rect x="196" y="0" width="3" height="36" fill="#000" />
-                            <rect x="201" y="0" width="2" height="36" fill="#000" />
-                            <rect x="205" y="0" width="4" height="36" fill="#000" />
-                            <rect x="211" y="0" width="3" height="36" fill="#000" />
-                            <rect x="216" y="0" width="2" height="36" fill="#000" />
-                          </svg>
-                        </div>
-                        <div style={{ fontSize: "10px", fontWeight: "900" }}>
-                          {activeBill?.order?.id ? activeBill.order.id.slice(-15) : "247835229110578"}
-                        </div>
-                        <div style={{ fontSize: "9px", fontWeight: "700", marginTop: "2px" }}>
-                          Pickup barcode for {activeBill?.order?.source || "delivery"} partner
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
 
               {printMode === "BILL_ONLY" || printMode === "BOTH" ? (
-                <div style={{ paddingTop: printMode === "BOTH" ? "8px" : "0", fontFamily: "'Courier New', Courier, monospace" }}>
+                <div style={{ paddingTop: printMode === "BOTH" ? "8px" : "0", fontFamily: "Arial, 'Helvetica Neue', Helvetica, Roboto, sans-serif" }}>
                   <div style={{ textAlign: "center", lineHeight: "1.25" }}>
                     {activeBill?.order ? (
-                      <div style={{ fontWeight: "900", fontSize: "13px", textTransform: "uppercase", marginBottom: "2px" }}>
+                      <div style={{ fontWeight: "700", fontSize: "13px", textTransform: "uppercase", marginBottom: "2px" }}>
                         PAID
                       </div>
                     ) : null}
-                    <div style={{ fontWeight: "900", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
+                    <div style={{ fontWeight: "700", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
                       Bombay Falooda
                     </div>
-                    <div style={{ fontSize: "10px", fontWeight: "600", padding: "0 2px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", padding: "0 2px" }}>
                       {context?.outlet?.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
                     </div>
-                    <div style={{ fontSize: "10px", fontWeight: "600", marginTop: "1px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", marginTop: "1px" }}>
                       M. {(context?.outlet as any)?.phone || "9574754173"}
                     </div>
                   </div>
 
-                  {/* Online Aggregator Details for Bill */}
-                  {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
-                    <>
-                      <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
-                      <div style={{ fontSize: "11px", fontWeight: "700", lineHeight: "1.3" }}>
-                        {(() => {
-                          const fullId = activeBill.order?.id || "8577852406";
-                          const mainPart = fullId.slice(0, -4);
-                          const last4 = fullId.slice(-4);
-                          return (
-                            <>
-                              <div>From {activeBill.order?.source === "ZOMATO" ? "Zomato" : activeBill.order?.source === "SWIGGY" ? "Swiggy" : activeBill.order?.source}[{mainPart}<span style={{ fontWeight: "900", fontSize: "14px" }}>{last4}</span>]</div>
-                              <div style={{ fontSize: "14px", fontWeight: "900", margin: "2px 0" }}>
-                                OTP: <span style={{ fontWeight: "900", fontSize: "16px" }}>{last4}</span>
-                              </div>
-                            </>
-                          );
-                        })()}
-                        {activeBill.customerName && <div>Name: {activeBill.customerName}</div>}
-                        <div>Adr: {activeBill.order.deliveryAddress || "Alwa Naka, Vadodara Vadodara India"}</div>
-                      </div>
-                    </>
-                  ) : null}
-
-                  <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
-
-                  <div style={{ fontSize: "11px", lineHeight: "1.3" }}>
+                  <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.3" }}>
+                    {activeBill?.customerName && (
+                      <div style={{ fontWeight: "400" }}>Name: {activeBill.customerName}</div>
+                    )}
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: "600" }}>Date: {new Date().toLocaleDateString("en-GB")}</span>
-                      <span style={{ fontWeight: "800" }}>
+                      <span style={{ fontWeight: "400" }}>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                      <span style={{ fontWeight: "700" }}>
                         {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: "600" }}>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: "600" }}>Cashier: {activeBill?.order ? "Autoaccept" : ((context as any)?.device?.name || "biller")}</span>
-                      <span style={{ fontWeight: "800" }}>
-                        Bill No.: {activeBill?.billNumber ? activeBill.billNumber.replace("BILL-", "") : "51766"}
+                      <span style={{ fontWeight: "400" }}>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ fontWeight: "400" }}>
+                        Bill No.: {activeBill?.billNumber ? activeBill.billNumber.replace("BILL-", "") : "51851"}
                       </span>
                     </div>
-                    <div style={{ fontWeight: "800" }}>
-                      Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "172"}
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontWeight: "400" }}>Cashier: {activeBill?.order ? "Autoaccept" : ((context as any)?.device?.name || "biller")}</span>
+                    </div>
+                    <div style={{ fontWeight: "700", marginTop: "1px" }}>
+                      Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "8"}
                     </div>
                   </div>
 
@@ -2436,10 +2334,10 @@ export default function PosTerminalPage() {
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px dashed #000" }}>
-                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "800" }}>No.Item</th>
-                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "800" }}>Qty.</th>
-                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "800" }}>Price</th>
-                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "800" }}>Amount</th>
+                        <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "400" }}>No.Item</th>
+                        <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "400" }}>Qty.</th>
+                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "400" }}>Price</th>
+                        <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "400" }}>Amount</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2449,17 +2347,17 @@ export default function PosTerminalPage() {
                         const itemTotal = Number(item.total || unitPrice * qty);
                         return (
                           <tr key={idx} style={{ verticalAlign: "top" }}>
-                            <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "800", paddingRight: "4px" }}>
+                            <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "400", paddingRight: "4px" }}>
                               {idx + 1} {item.name}
                               {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                                <div style={{ fontSize: "10px", fontWeight: "600", color: "#000" }}>
+                                <div style={{ fontSize: "10px", fontWeight: "400", color: "#000" }}>
                                   ({item.addons.map((a: any) => a.name).join(", ")})
                                 </div>
                               )}
                             </td>
-                            <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "700" }}>{qty}</td>
-                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "700" }}>{unitPrice.toFixed(2)}</td>
-                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "800" }}>{itemTotal.toFixed(2)}</td>
+                            <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "400" }}>{qty}</td>
+                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "400" }}>{unitPrice.toFixed(2)}</td>
+                            <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "400" }}>{itemTotal.toFixed(2)}</td>
                           </tr>
                         );
                       })}
@@ -2467,22 +2365,15 @@ export default function PosTerminalPage() {
                   </table>
 
                   <div style={{ borderTop: "1px dashed #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "400" }}>
                       <span>Total Qty: {(activeBill?.items || cart).reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)}</span>
-                      <span>Sub Total  {Number(activeBill?.subtotal || payableTotal).toFixed(2)}</span>
+                      <span>Sub Total  {Number(activeBill?.subtotal || cartSubtotal).toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div style={{ borderTop: "1px solid #000", borderBottom: "1px solid #000", margin: "6px 0", padding: "6px 0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "15px" }}>
-                      <span>Grand Total</span>
-                      <span>₹ {Number(activeBill?.total || payableTotal).toFixed(2)}</span>
-                    </div>
-                    {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
-                      <div style={{ fontSize: "10px", fontWeight: "800", marginTop: "2px" }}>
-                        Paid via Online [{activeBill.order.source === "ZOMATO" ? "Zomato" : activeBill.order.source === "SWIGGY" ? "Swiggy" : activeBill.order.source}]
-                      </div>
-                    ) : null}
+                  <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "700", fontSize: "14px" }}>
+                    <span>Grand Total</span>
+                    <span>₹ {Number(activeBill?.total || cartTotal).toFixed(2)}</span>
                   </div>
 
                   {activeBill?.order?.source && activeBill.order.source !== "POS" ? (

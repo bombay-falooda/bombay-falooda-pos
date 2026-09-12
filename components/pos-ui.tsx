@@ -49,38 +49,40 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
-    <div id="print-ticket-root" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+    <div id="print-ticket-root" style={{ fontFamily: "Arial, 'Helvetica Neue', Helvetica, Roboto, sans-serif" }}>
       <div style={{ textAlign: "center", lineHeight: "1.25" }}>
-        <div style={{ fontWeight: "900", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
+        <div style={{ fontWeight: "700", fontSize: "16px", textTransform: "none", marginBottom: "2px" }}>
           Bombay Falooda
         </div>
-        <div style={{ fontSize: "10px", fontWeight: "600", padding: "0 2px" }}>
+        <div style={{ fontSize: "11px", fontWeight: "700", padding: "0 2px" }}>
           {bill.outlet?.address || "Opp Sayaji vihar club, near khanderav market, raj mahal road vadodara."}
         </div>
-        <div style={{ fontSize: "10px", fontWeight: "600", marginTop: "1px" }}>
+        <div style={{ fontSize: "11px", fontWeight: "700", marginTop: "1px" }}>
           M. {(bill.outlet as any)?.phone || "9574754173"}
         </div>
       </div>
 
       <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.3" }}>
         {bill.customerName && (
-          <div style={{ fontWeight: "800" }}>Name: {bill.customerName}</div>
+          <div style={{ fontWeight: "400" }}>Name: {bill.customerName}</div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: "600" }}>Date: {formatDate(bill.createdAt).split(",")[0] || new Date().toLocaleDateString("en-GB")}</span>
-          <span style={{ fontWeight: "600" }}>{formatDate(bill.createdAt).split(",")[1] || new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
-          <span style={{ fontWeight: "800" }}>
+          <span style={{ fontWeight: "400" }}>Date: {formatDate(bill.createdAt).split(",")[0] || new Date().toLocaleDateString("en-GB")}</span>
+          <span style={{ fontWeight: "700" }}>
             {bill.orderType === "DINE_IN" ? "Dine In" : bill.orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: "600" }}>Cashier: {bill.posDevice?.name || "biller"}</span>
-          <span style={{ fontWeight: "800" }}>
-            Bill No.: {bill.billNumber ? bill.billNumber.replace("BILL-", "") : "1"}
+          <span style={{ fontWeight: "400" }}>{formatDate(bill.createdAt).split(",")[1] || new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+          <span style={{ fontWeight: "400" }}>
+            Bill No.: {bill.billNumber ? bill.billNumber.replace("BILL-", "") : "51851"}
           </span>
         </div>
-        <div style={{ fontWeight: "800" }}>
-          Token No.: {bill.kotTickets?.[0]?.kotNumber ? bill.kotTickets[0].kotNumber.replace("KOT-", "") : "1"}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: "400" }}>Cashier: {bill.posDevice?.name || "biller"}</span>
+        </div>
+        <div style={{ fontWeight: "700", marginTop: "1px" }}>
+          Token No.: {bill.kotTickets?.[0]?.kotNumber ? bill.kotTickets[0].kotNumber.replace("KOT-", "") : "8"}
         </div>
       </div>
 
@@ -89,46 +91,46 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
         <thead>
           <tr style={{ borderBottom: "1px dashed #000" }}>
-            <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "800" }}>No.Item</th>
-            <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "800" }}>Qty.</th>
-            <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "800" }}>Price</th>
-            <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "800" }}>Amount</th>
+            <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "400" }}>No.Item</th>
+            <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "400" }}>Qty.</th>
+            <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "400" }}>Price</th>
+            <th style={{ textAlign: "right", paddingBottom: "4px", width: "22%", fontWeight: "400" }}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {bill.items.map((item, idx) => (
             <tr key={item.id} style={{ verticalAlign: "top" }}>
-              <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "800", paddingRight: "4px" }}>
+              <td style={{ textAlign: "left", paddingTop: "4px", fontWeight: "400", paddingRight: "4px" }}>
                 {idx + 1} {item.name}
                 {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                  <div style={{ fontSize: "10px", fontWeight: "600", color: "#000" }}>
+                  <div style={{ fontSize: "10px", fontWeight: "400", color: "#000" }}>
                     ({item.addons.map((a: any) => a.name).join(", ")})
                   </div>
                 )}
               </td>
-              <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "700" }}>{item.quantity}</td>
-              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "700" }}>{Number(item.unitPrice).toFixed(2)}</td>
-              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "800" }}>{Number(item.total).toFixed(2)}</td>
+              <td style={{ textAlign: "center", paddingTop: "4px", fontWeight: "400" }}>{item.quantity}</td>
+              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "400" }}>{Number(item.unitPrice).toFixed(2)}</td>
+              <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "400" }}>{Number(item.total).toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <div style={{ borderTop: "1px dashed #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "400" }}>
           <span>Total Qty: {bill.items.reduce((sum, i) => sum + i.quantity, 0)}</span>
           <span>Sub Total  {Number(bill.subtotal).toFixed(2)}</span>
         </div>
       </div>
 
-      <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "15px" }}>
+      <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "700", fontSize: "14px" }}>
         <span>Grand Total</span>
         <span>₹ {Number(bill.total).toFixed(2)}</span>
       </div>
 
-      <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "800", lineHeight: "1.4" }}>
+      <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "700", lineHeight: "1.4" }}>
         <div>Thank You Visit Again</div>
-        <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "800" }}>"Please wait for 10 minutes after ordering."</div>
+        <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "700" }}>"Please wait for 10 minutes after ordering."</div>
       </div>
     </div>,
     document.body
