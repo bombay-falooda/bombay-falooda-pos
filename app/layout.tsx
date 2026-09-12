@@ -1,21 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
 
-const archivo = Archivo({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["500", "600", "700", "800"],
-});
-
-const plex = IBM_Plex_Sans({
+const geistSans = Geist({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -54,7 +52,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${archivo.variable} ${plex.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -62,7 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#c2415d" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body>
+      <body className="antialiased">
         <PwaRegister />
         {children}
       </body>
