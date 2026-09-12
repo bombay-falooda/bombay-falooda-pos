@@ -86,11 +86,11 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
         </div>
       </div>
 
-      <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
+      <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
 
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
         <thead>
-          <tr style={{ borderBottom: "1px dashed #000" }}>
+          <tr style={{ borderBottom: "1px solid #000" }}>
             <th style={{ textAlign: "left", paddingBottom: "4px", fontWeight: "400" }}>No.Item</th>
             <th style={{ textAlign: "center", paddingBottom: "4px", width: "12%", fontWeight: "400" }}>Qty.</th>
             <th style={{ textAlign: "right", paddingBottom: "4px", width: "18%", fontWeight: "400" }}>Price</th>
@@ -116,14 +116,14 @@ export function ThermalBillReceipt({ bill }: { bill: Bill }) {
         </tbody>
       </table>
 
-      <div style={{ borderTop: "1px dashed #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
+      <div style={{ borderTop: "1px solid #000", marginTop: "6px", paddingTop: "4px", fontSize: "11px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "400" }}>
           <span>Total Qty: {bill.items.reduce((sum, i) => sum + i.quantity, 0)}</span>
           <span>Sub Total  {Number(bill.subtotal).toFixed(2)}</span>
         </div>
       </div>
 
-      <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "700", fontSize: "14px" }}>
+      <div style={{ borderTop: "1px solid #000", borderBottom: "1px solid #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "700", fontSize: "14px" }}>
         <span>Grand Total</span>
         <span>₹ {Number(bill.total).toFixed(2)}</span>
       </div>
