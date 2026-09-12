@@ -1455,34 +1455,34 @@ export default function PosTerminalPage() {
       {/* SIDEBAR NAVIGATION DRAWER (Slide-out Left Menu) */}
       {showNavDrawer && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-start animate-in fade-in duration-150">
-          <div className="bg-white h-full w-84 shadow-2xl border-r border-slate-200 flex flex-col justify-between p-5">
+          <div className="bg-white h-full w-76 sm:w-80 shadow-2xl border-r border-slate-200 flex flex-col justify-between p-4">
             <div>
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 px-2.5 rounded-lg bg-gradient-to-br from-[#c82d4d] to-[#991b32] text-white font-black text-xs flex items-center justify-center tracking-wider shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 px-2 rounded-md bg-gradient-to-br from-[#c82d4d] to-[#991b32] text-white font-black text-[10px] flex items-center justify-center tracking-wider shadow-2xs">
                     POS
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-slate-900 leading-tight">Bombay Falooda POS</h3>
-                    <p className="text-[10px] text-slate-400 font-mono">Outlet: {context?.outlet.code || "KIRTI-OLT"}</p>
+                    <h3 className="font-bold text-[11px] text-slate-900 leading-tight">Bombay Falooda POS</h3>
+                    <p className="text-[9px] text-slate-400 font-mono">Outlet: {context?.outlet.code || "KIRTI-OLT"}</p>
                   </div>
                 </div>
-                <button type="button" onClick={() => setShowNavDrawer(false)} className="p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer">
-                  <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                <button type="button" onClick={() => setShowNavDrawer(false)} className="p-1 rounded-md hover:bg-slate-100 transition cursor-pointer">
+                  <X className="h-3.5 w-3.5 text-slate-400 hover:text-slate-600" />
                 </button>
               </div>
 
               {/* Menu List */}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
-                      <Store className="h-4 w-4 text-slate-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
+                      <Store className="h-3.5 w-3.5 text-slate-600" />
                     </div>
                     <span className="font-medium text-slate-800">Terminal Billing Register</span>
                   </div>
@@ -1491,15 +1491,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/orders"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
-                      <Receipt className="h-4 w-4 text-blue-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                      <Receipt className="h-3.5 w-3.5 text-blue-600" />
                     </div>
                     <span className="font-medium text-slate-800">Total Today Orders</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-blue-700 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-blue-700 text-[9px] font-bold">
                     {summary?.finalizedBills ?? 0} Orders
                   </span>
                 </button>
@@ -1507,15 +1507,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/sales"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
-                      <IndianRupee className="h-4 w-4 text-emerald-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                      <IndianRupee className="h-3.5 w-3.5 text-emerald-600" />
                     </div>
                     <span className="font-medium text-slate-800">Total Sales Today</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-[10px] font-mono font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-[9px] font-mono font-bold">
                     ₹{summary?.totalSales.toLocaleString("en-IN") ?? 0}
                   </span>
                 </button>
@@ -1523,15 +1523,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/live-orders"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
-                      <Radio className="h-4 w-4 text-purple-600 animate-pulse" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
+                      <Radio className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
                     </div>
                     <span className="font-medium text-slate-800">Live Orders</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200/70 text-purple-700 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200/70 text-purple-700 text-[9px] font-bold">
                     {orders.length} Active
                   </span>
                 </button>
@@ -1539,15 +1539,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/team-members"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 group-hover:bg-amber-100 transition-colors">
-                      <Users className="h-4 w-4 text-amber-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-amber-50 flex items-center justify-center shrink-0 group-hover:bg-amber-100 transition-colors">
+                      <Users className="h-3.5 w-3.5 text-amber-600" />
                     </div>
                     <span className="font-medium text-slate-800">Team Members Present</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-700 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-700 text-[9px] font-bold">
                     {teamMembers.length} Online
                   </span>
                 </button>
@@ -1555,15 +1555,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/shift"); }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
-                      <Sun className="h-4 w-4 text-orange-500" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-orange-50 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
+                      <Sun className="h-3.5 w-3.5 text-orange-500" />
                     </div>
                     <span className="font-medium text-slate-800">Start Day / End Day</span>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${shiftStatus === "OPEN" ? "bg-emerald-50 text-emerald-700 border-emerald-200/70" : "bg-rose-50 text-rose-700 border-rose-200/70"}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${shiftStatus === "OPEN" ? "bg-emerald-50 text-emerald-700 border-emerald-200/70" : "bg-rose-50 text-rose-700 border-rose-200/70"}`}>
                     {shiftStatus}
                   </span>
                 </button>
@@ -1571,10 +1571,10 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/item-toggle"); }}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="h-8 w-8 rounded-lg bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors">
-                    <SlidersHorizontal className="h-4 w-4 text-[#b82e46]" />
+                  <div className="h-7 w-7 rounded-md bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors">
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-[#b82e46]" />
                   </div>
                   <span className="font-medium text-slate-800">Item On/Off (Multi-Channel)</span>
                 </button>
@@ -1582,10 +1582,10 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/settings"); }}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
+                  className="w-full flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
-                    <Settings className="h-4 w-4 text-slate-600" />
+                  <div className="h-7 w-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
+                    <Settings className="h-3.5 w-3.5 text-slate-600" />
                   </div>
                   <span className="font-medium text-slate-800">Settings & Config (2FA & Printer)</span>
                 </button>
@@ -1593,23 +1593,23 @@ export default function PosTerminalPage() {
             </div>
 
             {/* Footer */}
-            <div className="pt-3 border-t border-slate-200 space-y-2">
-              <div className="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+            <div className="pt-2.5 border-t border-slate-200 space-y-1.5">
+              <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-medium">Active Register</span>
-                  <span className="font-bold text-slate-800">{context?.outlet.name || "Kirtistambh Outlet"}</span>
+                  <span className="text-[9px] text-slate-400 block font-medium">Active Register</span>
+                  <span className="font-bold text-[11px] text-slate-800">{context?.outlet.name || "Kirtistambh Outlet"}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live
                 </div>
               </div>
               <button
                 type="button"
                 onClick={logout}
-                className="w-full py-2.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.98] cursor-pointer"
+                className="w-full py-2 rounded-lg border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-[0.98] cursor-pointer"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 <span>Logout Terminal</span>
               </button>
             </div>

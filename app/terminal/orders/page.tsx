@@ -74,7 +74,7 @@ export default function TodayOrdersPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-5 md:p-6 max-w-6xl w-full mx-auto space-y-4">
+      <main className="flex-1 p-5 md:p-6 w-full mx-auto space-y-4">
         {/* Filters Bar */}
         <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative flex-1 w-full">
@@ -94,11 +94,10 @@ export default function TodayOrdersPage() {
                 key={st}
                 type="button"
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  statusFilter === st
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${statusFilter === st
                     ? "bg-[#b82e46] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                }`}
+                  }`}
               >
                 {st}
               </button>
@@ -141,13 +140,12 @@ export default function TodayOrdersPage() {
 
                   <div className="col-span-2 text-center">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        b.status === "FINALIZED"
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${b.status === "FINALIZED"
                           ? "bg-emerald-100/90 text-emerald-800 border border-emerald-200"
                           : b.status === "HELD"
-                          ? "bg-amber-100/90 text-amber-800 border border-amber-200"
-                          : "bg-rose-100/90 text-rose-800 border border-rose-200"
-                      }`}
+                            ? "bg-amber-100/90 text-amber-800 border border-amber-200"
+                            : "bg-rose-100/90 text-rose-800 border border-rose-200"
+                        }`}
                     >
                       {b.status}
                     </span>
