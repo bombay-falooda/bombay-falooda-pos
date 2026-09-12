@@ -2,9 +2,9 @@
   "name": "Bombay Falooda POS",
   "short_name": "Bombay POS",
   "description": "Counter billing terminal for Bombay Falooda outlets.",
-  "start_url": "/",
+  "start_url": "/terminal",
   "display": "standalone",
-  "background_color": "#fff8f3",
+  "background_color": "#ffffff",
   "theme_color": "#c2415d",
   "orientation": "any",
   "scope": "/",
@@ -13,13 +13,25 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/bombay-logo.png",
