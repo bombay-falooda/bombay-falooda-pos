@@ -781,7 +781,7 @@ export default function PosTerminalPage() {
           {/* Logo Badge */}
           <div className="flex items-center gap-2">
             <div className="h-7 px-2.5 rounded-lg bg-gradient-to-br from-[#c82d4d] to-[#991b32] text-white font-black text-[11px] flex items-center justify-center tracking-wider shadow-xs">
-              POSS
+              POS
             </div>
             <span className="text-xs font-bold text-slate-800 tracking-tight hidden sm:inline">
               Bombay Falooda <span className="text-[11px] font-mono font-medium text-slate-400">({context?.outlet.code || "R403993"})</span>
@@ -792,20 +792,20 @@ export default function PosTerminalPage() {
           <button
             type="button"
             onClick={handleNewOrder}
-            className="bg-gradient-to-r from-[#b82e46] to-[#9e2037] hover:from-[#a8253b] hover:to-[#8c192e] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-xs hover:shadow transition-all active:scale-[0.98] cursor-pointer"
+            className="bg-gradient-to-r from-[#b82e46] to-[#9e2037] hover:from-[#a8253b] hover:to-[#8c192e] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs hover:shadow transition-all active:scale-[0.98] cursor-pointer"
           >
             New Order
           </button>
 
           {/* Quick Header Inputs */}
-          <div className="hidden xl:flex items-center gap-2 ml-1">
+          <div className="hidden 2xl:flex items-center gap-2 ml-1">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search Item..."
                 value={itemSearch}
                 onChange={(e) => setItemSearch(e.target.value)}
-                className="h-7.5 w-40 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
+                className="h-7.5 w-36 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
               />
             </div>
             <input
@@ -813,14 +813,14 @@ export default function PosTerminalPage() {
               placeholder="Bill No"
               value={billNoSearch}
               onChange={(e) => setBillNoSearch(e.target.value)}
-              className="h-7.5 w-24 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
+              className="h-7.5 w-20 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
             />
             <input
               type="text"
               placeholder="KOT No"
               value={kotNoSearch}
               onChange={(e) => setKotNoSearch(e.target.value)}
-              className="h-7.5 w-24 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
+              className="h-7.5 w-20 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all"
             />
           </div>
         </div>
@@ -922,11 +922,11 @@ export default function PosTerminalPage() {
       {/* MAIN 3-PANEL WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
         {/* PANE 1: LEFT CATEGORY NAVIGATION BAR */}
-        <aside className="w-48 bg-[#f8fafc] border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto scrollbar-none">
+        <aside className="w-32 sm:w-36 md:w-40 lg:w-44 xl:w-48 bg-[#f8fafc] border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`w-full text-left px-3.5 py-3 text-xs font-semibold transition-all border-b border-slate-100 cursor-pointer ${
+            className={`w-full text-left px-2.5 sm:px-3.5 py-2.5 sm:py-3 text-[11px] sm:text-xs font-semibold transition-all border-b border-slate-100 cursor-pointer ${
               selectedCategory === "all"
                 ? "bg-white text-[#991b32] border-l-[3.5px] border-[#b82e46] font-bold shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 font-medium"
@@ -942,7 +942,7 @@ export default function PosTerminalPage() {
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`w-full text-left px-3.5 py-2.5 text-xs transition-all border-b border-slate-100 leading-tight cursor-pointer ${
+                className={`w-full text-left px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-[11px] sm:text-xs transition-all border-b border-slate-100 leading-tight cursor-pointer ${
                   isSelected
                     ? "bg-white text-[#991b32] border-l-[3.5px] border-[#b82e46] font-bold shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 font-medium"
@@ -957,14 +957,14 @@ export default function PosTerminalPage() {
         {/* PANE 2: CENTER ITEMS GRID & SEARCH AREA */}
         <section className="flex-1 flex flex-col bg-[#f1f5f9]/70 min-w-0 overflow-hidden">
           {/* Sub Header Search */}
-          <div className="p-2.5 bg-white border-b border-slate-200 flex gap-2.5 shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+          <div className="p-2 sm:p-2.5 bg-white border-b border-slate-200 flex gap-2 sm:gap-2.5 shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <div className="flex-1 relative">
               <input
                 type="text"
                 placeholder="Search menu items..."
                 value={itemSearch}
                 onChange={(e) => setItemSearch(e.target.value)}
-                className="w-full h-8.5 rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all font-medium placeholder-slate-400"
+                className="w-full h-8 sm:h-8.5 rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all font-medium placeholder-slate-400"
               />
             </div>
             <input
@@ -972,19 +972,19 @@ export default function PosTerminalPage() {
               placeholder="Short Code"
               value={shortCodeSearch}
               onChange={(e) => setShortCodeSearch(e.target.value)}
-              className="w-32 h-8.5 rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all font-medium placeholder-slate-400"
+              className="w-24 sm:w-32 h-8 sm:h-8.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 sm:px-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition-all font-medium placeholder-slate-400"
             />
           </div>
 
           {/* Items Grid */}
-          <div className="flex-1 p-3 overflow-y-auto scrollbar-none">
+          <div className="flex-1 p-2 sm:p-3 overflow-y-auto scrollbar-none">
             {visibleItems.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-xs font-semibold text-slate-400 gap-1.5">
                 <Search className="h-6 w-6 text-slate-300" />
                 <span>No active items found matching search.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-2.5">
                 {visibleItems.map((item) => {
                   const inCartCount = cart
                     .filter((c) => c.itemId === item.id)
@@ -1002,7 +1002,7 @@ export default function PosTerminalPage() {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`relative min-h-[92px] p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
+                      className={`relative min-h-[86px] sm:min-h-[92px] p-2.5 sm:p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
                         inCartCount > 0
                           ? "border-2 border-[#b82e46]/60 bg-rose-50/30 shadow-xs"
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-md"
@@ -1010,7 +1010,7 @@ export default function PosTerminalPage() {
                     >
                       {/* Top Title Bar */}
                       <div className="flex items-start justify-between gap-1 pb-1">
-                        <span className="font-bold text-xs text-slate-800 group-hover:text-[#991b32] transition-colors leading-tight line-clamp-2">
+                        <span className="font-bold text-[11px] sm:text-xs text-slate-800 group-hover:text-[#991b32] transition-colors leading-snug line-clamp-2">
                           {item.name}
                         </span>
                         {uniqueAddons.length > 0 && (
@@ -1030,7 +1030,7 @@ export default function PosTerminalPage() {
                       {/* Bottom Price Footer */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-1">
-                          <span className="font-mono text-xs font-black text-slate-900">
+                          <span className="font-mono text-xs sm:text-sm font-black text-slate-900">
                             ₹{Number(item.price).toFixed(0)}
                           </span>
                         </div>
@@ -1050,7 +1050,7 @@ export default function PosTerminalPage() {
         </section>
 
         {/* PANE 3: RIGHT CART & BILLING RECEIPT PANEL */}
-        <aside className="w-[490px] bg-white border-l border-slate-200 flex flex-col shrink-0 shadow-[-4px_0_16px_rgba(0,0,0,0.02)]">
+        <aside className="w-72 sm:w-80 md:w-[340px] lg:w-[380px] xl:w-[430px] 2xl:w-[480px] bg-white border-l border-slate-200 flex flex-col shrink-0 shadow-[-4px_0_16px_rgba(0,0,0,0.02)]">
           {/* Order Type Tabs (Dine In / Takeaway / Delivery) */}
           <div className="p-2 bg-slate-50 border-b border-slate-200">
             <div className="grid grid-cols-3 bg-slate-200/70 p-1 rounded-xl border border-slate-200 gap-1">
@@ -1062,14 +1062,14 @@ export default function PosTerminalPage() {
                     key={t.id}
                     type="button"
                     onClick={() => setOrderType(t.id)}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-1.5 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer ${
                       isSelected
                         ? "bg-[#b82e46] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                     }`}
                   >
-                    <IconComponent className="h-3.5 w-3.5" />
-                    <span>{t.label}</span>
+                    <IconComponent className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{t.label}</span>
                   </button>
                 );
               })}
@@ -1081,13 +1081,13 @@ export default function PosTerminalPage() {
             <button
               type="button"
               onClick={() => setShowCustomerModal(true)}
-              className="h-8.5 w-9.5 flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50/80 text-[#b82e46] hover:bg-rose-50 hover:border-rose-300 transition-all shrink-0 shadow-2xs cursor-pointer"
+              className="h-8 sm:h-8.5 w-8.5 sm:w-9.5 flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50/80 text-[#b82e46] hover:bg-rose-50 hover:border-rose-300 transition-all shrink-0 shadow-2xs cursor-pointer"
               title={customerName || customerPhone ? `${customerName || "Customer"} (${customerPhone})` : "Add Customer"}
             >
               <User className="h-4 w-4 text-[#b82e46]" />
             </button>
 
-            <div className="flex-1 h-8.5 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 flex items-center gap-2 focus-within:bg-white focus-within:border-[#b82e46] focus-within:ring-2 focus-within:ring-[#b82e46]/10 transition-all">
+            <div className="flex-1 h-8 sm:h-8.5 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 flex items-center gap-2 focus-within:bg-white focus-within:border-[#b82e46] focus-within:ring-2 focus-within:ring-[#b82e46]/10 transition-all">
               <MessageSquare className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -1100,7 +1100,7 @@ export default function PosTerminalPage() {
           </div>
 
           {/* Cart Items Table Header */}
-          <div className="grid grid-cols-12 px-3.5 py-2 bg-slate-50/90 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="grid grid-cols-12 px-2.5 sm:px-3.5 py-2 bg-slate-50/90 border-b border-slate-200 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <div className="col-span-5">ITEMS</div>
             <div className="col-span-3 text-center">CHECK ITEMS</div>
             <div className="col-span-2 text-center">QTY</div>
@@ -1110,7 +1110,7 @@ export default function PosTerminalPage() {
           {/* Cart Body */}
           <div className="flex-1 overflow-y-auto scrollbar-none">
             {activeBill ? (
-              <div className="p-3 space-y-2">
+              <div className="p-2.5 sm:p-3 space-y-2">
                 <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-xs shadow-2xs">
                   <div className="flex items-center justify-between font-bold text-purple-700">
                     <span>Bill: {activeBill.billNumber}</span>
@@ -1135,12 +1135,12 @@ export default function PosTerminalPage() {
               </div>
             ) : cart.length === 0 ? (
               /* EMPTY CART WATERMARK */
-              <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
-                <div className="h-16 w-16 rounded-2xl border border-slate-200/80 flex items-center justify-center mb-2.5 text-slate-400 bg-slate-50/80 shadow-2xs">
-                  <UtensilsCrossed className="h-7 w-7 text-slate-400 stroke-[1.75]" />
+              <div className="h-full flex flex-col items-center justify-center p-4 sm:p-6 text-center text-slate-400">
+                <div className="h-14 sm:h-16 w-14 sm:w-16 rounded-2xl border border-slate-200/80 flex items-center justify-center mb-2.5 text-slate-400 bg-slate-50/80 shadow-2xs">
+                  <UtensilsCrossed className="h-6 sm:h-7 w-6 sm:w-7 text-slate-400 stroke-[1.75]" />
                 </div>
                 <h4 className="font-bold text-xs text-slate-700">No Item Selected</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5 max-w-[210px] leading-tight">
+                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 max-w-[200px] leading-tight">
                   Please select products or beverages from the menu grid to start billing
                 </p>
               </div>
@@ -1148,7 +1148,7 @@ export default function PosTerminalPage() {
               /* ACTIVE CART ITEMS */
               <div className="divide-y divide-slate-100">
                 {cart.map((item) => (
-                  <div key={item.localId} className="px-3.5 py-2.5 flex items-center justify-between gap-2.5 hover:bg-slate-50/80 transition-colors text-xs">
+                  <div key={item.localId} className="px-2.5 sm:px-3.5 py-2 sm:py-2.5 flex items-center justify-between gap-2 hover:bg-slate-50/80 transition-colors text-xs">
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-slate-800 truncate">{item.name}</div>
                       {item.addons.length > 0 && (
@@ -1179,7 +1179,7 @@ export default function PosTerminalPage() {
                       </button>
                     </div>
 
-                    <div className="text-right min-w-[55px] flex flex-col items-end">
+                    <div className="text-right min-w-[50px] sm:min-w-[55px] flex flex-col items-end">
                       <div className="font-mono font-bold text-xs text-slate-900">
                         ₹{item.unitPrice * item.quantity}
                       </div>
@@ -1199,13 +1199,13 @@ export default function PosTerminalPage() {
           </div>
 
           {/* Compact Bottom Controls Box */}
-          <div className="p-2.5 bg-slate-50/90 border-t border-slate-200 space-y-2 shrink-0">
+          <div className="p-2 sm:p-2.5 bg-slate-50/90 border-t border-slate-200 space-y-2 shrink-0">
             <div className="flex items-center justify-between text-xs">
               <div className="flex gap-1.5">
-                <button type="button" className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer">
+                <button type="button" className="px-2 sm:px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer">
                   Split
                 </button>
-                <button type="button" className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer">
+                <button type="button" className="px-2 sm:px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer">
                   Advance Order
                 </button>
               </div>
@@ -1215,17 +1215,17 @@ export default function PosTerminalPage() {
                   type="number"
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
-                  className="w-16 h-6.5 rounded-lg border border-slate-200 bg-white px-1.5 text-right font-mono text-xs font-bold text-slate-800 outline-none focus:border-[#b82e46] shadow-2xs"
+                  className="w-14 sm:w-16 h-6 sm:h-6.5 rounded-lg border border-slate-200 bg-white px-1.5 text-right font-mono text-xs font-bold text-slate-800 outline-none focus:border-[#b82e46] shadow-2xs"
                 />
               </div>
             </div>
 
             {/* Action Buttons Row (Clear, Save & Print [KOT+Bill], KOT Only, Print Bill) */}
-            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 pt-0.5">
               <button
                 type="button"
                 onClick={handleClearScreen}
-                className="py-2 px-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] border border-rose-200/80 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs active:scale-[0.98]"
+                className="py-2 px-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] sm:text-[11px] border border-rose-200/80 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs active:scale-[0.98]"
                 title="Clear active screen, cart items, customer details & notes"
               >
                 Clear
@@ -1234,7 +1234,7 @@ export default function PosTerminalPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void saveAndPrintBoth()}
-                className="py-2 px-1 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
+                className="py-2 px-1 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-[10px] sm:text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
                 title="Saves bill & prints BOTH KOT and Bill receipts"
               >
                 Save & Print
@@ -1243,7 +1243,7 @@ export default function PosTerminalPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void createKotOnly()}
-                className="py-2 px-1 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
+                className="py-2 px-1 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-[10px] sm:text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
                 title="Generates & prints KOT receipt only"
               >
                 KOT Only
@@ -1252,7 +1252,7 @@ export default function PosTerminalPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void finalizeAndPrintBillOnly()}
-                className="py-2 px-1 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
+                className="py-2 px-1 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] sm:text-[11px] shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
                 title="Finalizes payment & prints Bill receipt only"
               >
                 Print Bill
@@ -1260,15 +1260,15 @@ export default function PosTerminalPage() {
             </div>
 
             {/* Grand Total Display */}
-            <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 text-white px-3.5 py-2.5 rounded-xl shadow-xs border border-slate-700/50">
-              <span className="text-xs font-semibold text-slate-300 tracking-wide uppercase">Grand Total</span>
-              <span className="font-mono text-2xl font-black text-emerald-400 tracking-tight">
+            <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 text-white px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl shadow-xs border border-slate-700/50">
+              <span className="text-[10px] sm:text-xs font-semibold text-slate-300 tracking-wide uppercase">Grand Total</span>
+              <span className="font-mono text-xl sm:text-2xl font-black text-emerald-400 tracking-tight">
                 ₹ {payableTotal.toLocaleString("en-IN")}
               </span>
             </div>
 
             {/* Payment Options */}
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
               {(["CASH", "CARD", "UPI"] as const).map((m) => {
                 const isSelected = paymentMethod === m;
                 const PaymentIcon = m === "CASH" ? Banknote : m === "CARD" ? CreditCard : QrCode;
@@ -1277,13 +1277,13 @@ export default function PosTerminalPage() {
                     key={m}
                     type="button"
                     onClick={() => setPaymentMethod(m)}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+                    className={`py-1.5 px-1 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold border transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer shadow-2xs ${
                       isSelected
                         ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                         : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                     }`}
                   >
-                    <PaymentIcon className="h-3.5 w-3.5" />
+                    <PaymentIcon className="h-3.5 w-3.5 shrink-0" />
                     <span>{m === "CASH" ? "Cash" : m === "CARD" ? "Card" : "UPI"}</span>
                     {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                   </button>
@@ -1455,20 +1455,20 @@ export default function PosTerminalPage() {
       {/* SIDEBAR NAVIGATION DRAWER (Slide-out Left Menu) */}
       {showNavDrawer && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-start animate-in fade-in duration-150">
-          <div className="bg-white h-full w-80 shadow-2xl border-r border-slate-200 flex flex-col justify-between p-5">
+          <div className="bg-white h-full w-84 shadow-2xl border-r border-slate-200 flex flex-col justify-between p-5">
             <div>
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-8 px-2.5 rounded-lg bg-gradient-to-br from-[#c82d4d] to-[#991b32] text-white font-black text-xs flex items-center justify-center shadow-xs">
-                    POSS
+                  <div className="h-8 px-2.5 rounded-lg bg-gradient-to-br from-[#c82d4d] to-[#991b32] text-white font-black text-xs flex items-center justify-center tracking-wider shadow-xs">
+                    POS
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-slate-900">Bombay Falooda POS</h3>
-                    <p className="text-[10px] text-slate-400 font-mono">Outlet: {context?.outlet.code || "R403993"}</p>
+                    <h3 className="font-bold text-xs text-slate-900 leading-tight">Bombay Falooda POS</h3>
+                    <p className="text-[10px] text-slate-400 font-mono">Outlet: {context?.outlet.code || "KIRTI-OLT"}</p>
                   </div>
                 </div>
-                <button type="button" onClick={() => setShowNavDrawer(false)} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <button type="button" onClick={() => setShowNavDrawer(false)} className="p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                   <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
                 </button>
               </div>
@@ -1478,22 +1478,28 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal"); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <Store className="h-4 w-4 text-slate-500" />
-                  <span>Terminal Billing Register</span>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
+                      <Store className="h-4 w-4 text-slate-600" />
+                    </div>
+                    <span className="font-medium text-slate-800">Terminal Billing Register</span>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/orders"); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
-                    <Receipt className="h-4 w-4 text-blue-600" />
-                    <span>Total Today Orders</span>
+                    <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                      <Receipt className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="font-medium text-slate-800">Total Today Orders</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-700 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-blue-700 text-[10px] font-bold">
                     {summary?.finalizedBills ?? 0} Orders
                   </span>
                 </button>
@@ -1501,13 +1507,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/sales"); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
-                    <IndianRupee className="h-4 w-4 text-emerald-600" />
-                    <span>Total Sales Today</span>
+                    <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                      <IndianRupee className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <span className="font-medium text-slate-800">Total Sales Today</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-700 text-[10px] font-mono font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-[10px] font-mono font-bold">
                     ₹{summary?.totalSales.toLocaleString("en-IN") ?? 0}
                   </span>
                 </button>
@@ -1515,13 +1523,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/live-orders"); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
-                    <Radio className="h-4 w-4 text-purple-600" />
-                    <span>Live Orders</span>
+                    <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
+                      <Radio className="h-4 w-4 text-purple-600 animate-pulse" />
+                    </div>
+                    <span className="font-medium text-slate-800">Live Orders</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200/70 text-purple-700 text-[10px] font-bold">
                     {orders.length} Active
                   </span>
                 </button>
@@ -1529,13 +1539,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/team-members"); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-amber-600" />
-                    <span>Team Members Present</span>
+                    <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 group-hover:bg-amber-100 transition-colors">
+                      <Users className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <span className="font-medium text-slate-800">Team Members Present</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-700 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-700 text-[10px] font-bold">
                     {teamMembers.length} Online
                   </span>
                 </button>
@@ -1543,13 +1555,15 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/shift"); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
-                    <Sun className="h-4 w-4 text-orange-500" />
-                    <span>Start Day / End Day</span>
+                    <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
+                      <Sun className="h-4 w-4 text-orange-500" />
+                    </div>
+                    <span className="font-medium text-slate-800">Start Day / End Day</span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${shiftStatus === "OPEN" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${shiftStatus === "OPEN" ? "bg-emerald-50 text-emerald-700 border-emerald-200/70" : "bg-rose-50 text-rose-700 border-rose-200/70"}`}>
                     {shiftStatus}
                   </span>
                 </button>
@@ -1557,19 +1571,23 @@ export default function PosTerminalPage() {
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/item-toggle"); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <SlidersHorizontal className="h-4 w-4 text-[#b82e46]" />
-                  <span>Item On/Off (Multi-Channel)</span>
+                  <div className="h-8 w-8 rounded-lg bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors">
+                    <SlidersHorizontal className="h-4 w-4 text-[#b82e46]" />
+                  </div>
+                  <span className="font-medium text-slate-800">Item On/Off (Multi-Channel)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setShowNavDrawer(false); router.push("/terminal/settings"); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#991b32] transition cursor-pointer"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-all cursor-pointer group"
                 >
-                  <Settings className="h-4 w-4 text-slate-600" />
-                  <span>Settings & Config (2FA & Printer)</span>
+                  <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors">
+                    <Settings className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <span className="font-medium text-slate-800">Settings & Config (2FA & Printer)</span>
                 </button>
               </div>
             </div>
@@ -1579,14 +1597,17 @@ export default function PosTerminalPage() {
               <div className="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
                 <div>
                   <span className="text-[10px] text-slate-400 block font-medium">Active Register</span>
-                  <span className="font-bold text-slate-800">{context?.outlet.name || "Varachha Outlet"}</span>
+                  <span className="font-bold text-slate-800">{context?.outlet.name || "Kirtistambh Outlet"}</span>
                 </div>
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </div>
               </div>
               <button
                 type="button"
                 onClick={logout}
-                className="w-full py-2.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                className="w-full py-2.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.98] cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout Terminal</span>
