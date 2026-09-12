@@ -2373,7 +2373,7 @@ export default function PosTerminalPage() {
 
                   <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", margin: "6px 0", padding: "6px 0", display: "flex", justifyContent: "space-between", fontWeight: "700", fontSize: "14px" }}>
                     <span>Grand Total</span>
-                    <span>₹ {Number(activeBill?.total || cartTotal).toFixed(2)}</span>
+                    <span>₹ {Number(activeBill?.total || activeTotal).toFixed(2)}</span>
                   </div>
 
                   {activeBill?.order?.source && activeBill.order.source !== "POS" ? (
