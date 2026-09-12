@@ -27,6 +27,12 @@ import {
   buildEscPosKotReceipt,
   buildEscPosBillReceipt,
 } from "@/lib/bluetooth-printer";
+import {
+  connectUsbPrinter,
+  sendEscPosToUsb,
+  isWebSerialSupported,
+  getConnectedUsbDeviceName,
+} from "@/lib/usb-printer";
 
 type SettingsData = {
   twoFactorEnabled: boolean;
@@ -47,9 +53,10 @@ export default function PosSettingsPage() {
   const [paperWidth, setPaperWidth] = useState("80mm");
   const [autoCut, setAutoCut] = useState(true);
 
-  // Printer Connection Mode & Bluetooth State
-  const [printerConnectionType, setPrinterConnectionType] = useState<"CABLE" | "BLUETOOTH">("CABLE");
+  // Printer Connection Mode & Hardware States
+  const [printerConnectionType, setPrinterConnectionType] = useState<"USB_DIRECT" | "BLUETOOTH" | "CABLE">("USB_DIRECT");
   const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
+  const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [testingPrinter, setTestingPrinter] = useState(false);
@@ -60,8 +67,8 @@ export default function PosSettingsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedType = localStorage.getItem("pos_printer_type");
-      if (savedType === "BLUETOOTH" || savedType === "CABLE") {
-        setPrinterConnectionType(savedType);
+      if (savedType === "BLUETOOTH" || savedType === "CABLE" || savedType === "USB_DIRECT") {
+        setPrinterConnectionType(savedType as any);
       }
       const savedName = localStorage.getItem("pos_printer_name");
       if (savedName) setPrinterName(savedName);
@@ -120,6 +127,22 @@ export default function PosSettingsPage() {
     }
   }
 
+  async function handleConnectUsb() {
+    try {
+      setError("");
+      setMessage("");
+      const name = await connectUsbPrinter();
+      setUsbDeviceName(name);
+      setPrinterConnectionType("USB_DIRECT");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pos_printer_type", "USB_DIRECT");
+      }
+      setMessage(`Successfully connected to USB Cable Thermal Printer: ${name}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to pair USB printer");
+    }
+  }
+
   async function handleConnectBluetooth() {
     try {
       setError("");
@@ -158,7 +181,7 @@ export default function PosSettingsPage() {
           },
         }
       );
-      setMessage(`${res.message} (${printerConnectionType === "BLUETOOTH" ? "Bluetooth Wireless Mode" : "USB Cable / Windows Mode"})`);
+      setMessage(`${res.message} (${printerConnectionType === "USB_DIRECT" ? "Direct USB Cable Mode (0ms/Zero Flash)" : printerConnectionType === "BLUETOOTH" ? "Bluetooth Wireless Mode" : "Windows Spooler Mode"})`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save printer settings");
     }
@@ -170,7 +193,15 @@ export default function PosSettingsPage() {
     setError("");
 
     try {
-      if (printerConnectionType === "BLUETOOTH") {
+      if (printerConnectionType === "USB_DIRECT") {
+        const kotBytes = buildEscPosKotReceipt(
+          "TEST-1",
+          "TAKEAWAY",
+          [{ name: "Pista Falooda (Test)", quantity: 1, notes: "Direct USB Receipt Test" }]
+        );
+        await sendEscPosToUsb(kotBytes);
+        setTestResult(`🟢 Direct USB Cable test receipt printed instantly (0 preview dialog)!`);
+      } else if (printerConnectionType === "BLUETOOTH") {
         if (!btDeviceName) {
           setError("No Bluetooth printer paired. Please click 'Pair Bluetooth Thermal Printer' first.");
           return;
@@ -183,7 +214,7 @@ export default function PosSettingsPage() {
         await sendEscPosToBluetooth(kotBytes);
         setTestResult(`🟢 Bluetooth test receipt sent successfully to ${btDeviceName}`);
       } else {
-        setTestResult("🟢 Triggering USB Cable / Windows driver test receipt print...");
+        setTestResult("🟢 Triggering Windows driver print spooler...");
         setTimeout(() => window.print(), 250);
       }
     } catch (err: any) {
@@ -303,43 +334,87 @@ export default function PosSettingsPage() {
               {/* Connection Mode Selector */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Printer Connection Mode</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setPrinterConnectionType("CABLE")}
-                    className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                      printerConnectionType === "CABLE"
-                        ? "border-blue-600 bg-blue-50/90 text-blue-950 font-bold shadow-2xs"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold">🔌 USB / Cable</span>
-                      {printerConnectionType === "CABLE" && <Check className="h-4 w-4 text-blue-600 font-bold" />}
-                    </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">Windows Driver / Kiosk Print</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPrinterConnectionType("BLUETOOTH")}
-                    className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                      printerConnectionType === "BLUETOOTH"
+                    onClick={() => {
+                      setPrinterConnectionType("USB_DIRECT");
+                      if (typeof window !== "undefined") localStorage.setItem("pos_printer_type", "USB_DIRECT");
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                      printerConnectionType === "USB_DIRECT"
                         ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 font-bold shadow-2xs"
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold">📶 Bluetooth</span>
-                      {printerConnectionType === "BLUETOOTH" && <Check className="h-4 w-4 text-emerald-600 font-bold" />}
+                      <span className="text-xs font-bold">⚡ USB Direct</span>
+                      {printerConnectionType === "USB_DIRECT" && <Check className="h-3.5 w-3.5 text-emerald-600 font-bold" />}
                     </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">Wireless ESC/POS Direct Pair</span>
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">0ms / Zero Flash</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrinterConnectionType("BLUETOOTH");
+                      if (typeof window !== "undefined") localStorage.setItem("pos_printer_type", "BLUETOOTH");
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                      printerConnectionType === "BLUETOOTH"
+                        ? "border-blue-600 bg-blue-50/90 text-blue-950 font-bold shadow-2xs"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold">📶 Bluetooth</span>
+                      {printerConnectionType === "BLUETOOTH" && <Check className="h-3.5 w-3.5 text-blue-600 font-bold" />}
+                    </div>
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">Wireless ESC/POS</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrinterConnectionType("CABLE");
+                      if (typeof window !== "undefined") localStorage.setItem("pos_printer_type", "CABLE");
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                      printerConnectionType === "CABLE"
+                        ? "border-slate-700 bg-slate-100 text-slate-950 font-bold shadow-2xs"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold">🖨️ Windows</span>
+                      {printerConnectionType === "CABLE" && <Check className="h-3.5 w-3.5 text-slate-800 font-bold" />}
+                    </div>
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">System Driver</span>
                   </button>
                 </div>
               </div>
 
               {/* Dynamic Connection Options */}
-              {printerConnectionType === "BLUETOOTH" ? (
+              {printerConnectionType === "USB_DIRECT" ? (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700">Direct USB Status:</span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${usbDeviceName ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-blue-100 text-blue-800 border border-blue-300"}`}>
+                      {usbDeviceName ? `🟢 Connected: ${usbDeviceName}` : "Ready to Pair (USB Cable)"}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleConnectUsb()}
+                    className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span>{usbDeviceName ? "Change / Re-pair USB Cable Printer" : "Pair USB Cable Printer (One-Click)"}</span>
+                  </button>
+                  <p className="text-[10px] text-slate-500 text-center">Bypasses Chrome print preview window completely for 100% silent zero-flash printing.</p>
+                </div>
+              ) : printerConnectionType === "BLUETOOTH" ? (
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-slate-700">Bluetooth Status:</span>
@@ -351,21 +426,13 @@ export default function PosSettingsPage() {
                   <button
                     type="button"
                     onClick={() => void handleConnectBluetooth()}
-                    className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Bluetooth className="h-4 w-4" />
                     <span>{btDeviceName ? "Re-pair Bluetooth Thermal Printer" : "Connect with Bluetooth"}</span>
                   </button>
                 </div>
               ) : (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                    <span>USB Cable / Windows Driver Status:</span>
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
-                      🟢 Connect with USB (Active)
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-tight">
                     Plug USB cable from thermal printer into PC. Uses default Windows printer driver or Chrome kiosk auto-print (<code className="bg-white px-1 py-0.5 rounded text-blue-600 border">--kiosk-printing</code>).
                   </p>
                 </div>

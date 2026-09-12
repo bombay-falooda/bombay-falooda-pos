@@ -48,6 +48,7 @@ import {
   buildEscPosKotReceipt,
   buildEscPosBillReceipt,
 } from "@/lib/bluetooth-printer";
+import { connectUsbPrinter, sendEscPosToUsb } from "@/lib/usb-printer";
 
 type CartLine = {
   localId: string;
@@ -352,7 +353,8 @@ export default function PosTerminalPage() {
   }
 
   const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
-  const [printerConnectionType, setPrinterConnectionType] = useState<"CABLE" | "BLUETOOTH">("CABLE");
+  const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
+  const [printerConnectionType, setPrinterConnectionType] = useState<"USB_DIRECT" | "BLUETOOTH" | "CABLE">("USB_DIRECT");
 
   async function handleConnectBluetooth() {
     try {
@@ -361,6 +363,9 @@ export default function PosTerminalPage() {
       const name = await connectBluetoothPrinter();
       setBtDeviceName(name);
       setPrinterConnectionType("BLUETOOTH");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pos_printer_type", "BLUETOOTH");
+      }
       setMessage(`Connected to Bluetooth Printer: ${name}`);
     } catch (err: any) {
       setError(err.message || "Failed to pair Bluetooth printer");
@@ -371,6 +376,42 @@ export default function PosTerminalPage() {
 
   async function triggerThermalPrint(mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY", billData?: Bill | null, kotNumber?: string) {
     setPrintMode(mode);
+
+    // 1. DIRECT USB CABLE DRIVER (0 Preview Dialog / 0ms Screen Flash)
+    if (printerConnectionType === "USB_DIRECT") {
+      try {
+        if (mode === "KOT_ONLY" || mode === "BOTH") {
+          const kotBytes = buildEscPosKotReceipt(
+            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+            orderType,
+            (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
+          );
+          await sendEscPosToUsb(kotBytes);
+        }
+        if (mode === "BILL_ONLY" || mode === "BOTH") {
+          const billBytes = buildEscPosBillReceipt(
+            context?.outlet.name || "Bombay Falooda",
+            context?.outlet.address || "Vadodara",
+            billData?.billNumber || "1",
+            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+            orderType,
+            (billData?.items || cart).map((i: any) => ({
+              name: i.name,
+              quantity: i.quantity || 1,
+              unitPrice: Number(i.unitPrice || i.price || 0),
+              total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
+            })),
+            Number(billData?.total || payableTotal)
+          );
+          await sendEscPosToUsb(billBytes);
+        }
+        return;
+      } catch (err: any) {
+        console.warn("Direct USB print failed, falling back to window.print():", err);
+      }
+    }
+
+    // 2. DIRECT BLUETOOTH DRIVER (0 Preview Dialog / 0ms Screen Flash)
     if (printerConnectionType === "BLUETOOTH" && btDeviceName) {
       try {
         if (mode === "KOT_ONLY" || mode === "BOTH") {
@@ -403,6 +444,8 @@ export default function PosTerminalPage() {
         console.warn("Bluetooth thermal print failed, falling back to USB cable / Windows driver:", err);
       }
     }
+
+    // 3. FALLBACK TO WINDOWS DRIVER / KIOSK SPOOLER
     setTimeout(() => window.print(), 350);
   }
 
