@@ -129,12 +129,12 @@ class EscPosEncoder {
   }
 
   solidLine() {
-    this.line("------------------------------------------------");
+    this.bold(false).line("________________________________________________");
     return this;
   }
 
   dashedLine() {
-    this.line("------------------------------------------------");
+    this.bold(false).line("------------------------------------------------");
     return this;
   }
 
@@ -198,7 +198,7 @@ export function buildEscPosKotReceipt(
     encoder.alignLeft();
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
-    encoder.line(`${cust}${ph}`);
+    encoder.bold(true).line(`${cust}${ph}`).bold(false);
   }
 
   encoder.alignLeft().solidLine();
@@ -277,8 +277,7 @@ export function buildEscPosBillReceipt(
   if (customerName || customerPhone) {
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
-    encoder.bold(true).line(`${cust}${ph}`);
-    encoder.bold(false);
+    encoder.bold(true).line(`${cust}${ph}`).bold(false);
   }
 
   const now = new Date();
@@ -290,12 +289,12 @@ export function buildEscPosBillReceipt(
   const ordStr = `Order: ${ordTypeLabel}`.padEnd(24, " ");
   const billNoClean = billNumber.replace("BILL-", "").replace("INV-", "");
   const billStr = `Bill No: ${billNoClean}`.padStart(24, " ");
-  encoder.line(`${ordStr}${billStr}`);
+  encoder.bold(true).line(`${ordStr}${billStr}`).bold(false);
 
   const cashierStr = `Cashier: ${cashierName || "biller"}`.padEnd(24, " ");
   const tokenClean = tokenNumber.replace("KOT-", "").replace("TOKEN-", "");
   const tokenStr = `Token No: ${tokenClean}`.padStart(24, " ");
-  encoder.line(`${cashierStr}${tokenStr}`);
+  encoder.bold(true).line(`${cashierStr}${tokenStr}`).bold(false);
   encoder.solidLine();
 
   // 3. Table Header (48 cols: Item Name 28, Qty 6, Amount 14)
