@@ -117,7 +117,12 @@ export default function PosSettingsPage() {
       if (data) {
         setTwoFactorEnabled(data.twoFactorEnabled ?? true);
         if (data.printer) {
-          setPrinterName(data.printer.name || "Thermal Receipt Printer (80mm)");
+          const savedLocalName = typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : null;
+          if (!savedLocalName || savedLocalName === "Thermal Receipt Printer (80mm)") {
+            if (data.printer.name && data.printer.name !== "Thermal Receipt Printer (80mm)") {
+              setPrinterName(data.printer.name);
+            }
+          }
           setPrinterIp(data.printer.ipAddress || "192.168.1.100");
           setPaperWidth(data.printer.paperWidth || "80mm");
           setAutoCut(data.printer.autoCut ?? true);
@@ -220,7 +225,10 @@ export default function PosSettingsPage() {
 
     try {
       const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
-      const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName || "POS-80";
+      let targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName || "POS-80";
+      if (targetPrinter === "Thermal Receipt Printer (80mm)") {
+        targetPrinter = "POS-80";
+      }
 
       // 1. Desktop App Native Win32 Spooler Raw Print (Zero-Dialog, Instant Thermal Print)
       if (electron && typeof electron.printRawEscPos === "function") {
@@ -231,7 +239,7 @@ export default function PosSettingsPage() {
         );
         const res = await electron.printRawEscPos(kotBytes, targetPrinter);
         if (res && res.success) {
-          setTestResult(`🟢 Test receipt printed instantly via Windows Thermal Driver (${targetPrinter})!`);
+          setTestResult(`🟢 Test receipt printed instantly via Windows Thermal Driver (${res.printer || targetPrinter})!`);
         } else {
           setTestResult(`🔴 Test print error: ${res?.error || "Unknown error"}`);
         }

@@ -395,7 +395,10 @@ export default function PosTerminalPage() {
     setPrintMode(mode);
 
     const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
-    const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || "POS-80";
+    let targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || "POS-80";
+    if (targetPrinter === "Thermal Receipt Printer (80mm)") {
+      targetPrinter = "POS-80";
+    }
 
     // Build binary ESC/POS buffers
     let kotBytes: Uint8Array | null = null;
