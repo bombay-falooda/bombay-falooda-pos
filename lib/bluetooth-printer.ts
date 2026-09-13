@@ -85,7 +85,9 @@ class EscPosEncoder {
   private buffer: number[] = [];
 
   init() {
-    this.buffer.push(0x1b, 0x40); // ESC @
+    this.buffer.push(0x1b, 0x40); // ESC @ (Initialize printer)
+    this.buffer.push(0x1b, 0x4d, 0x00); // ESC M 0 (Standard Font A 12x24)
+    this.buffer.push(0x1b, 0x32); // ESC 2 (Default line spacing)
     return this;
   }
 
@@ -227,17 +229,17 @@ export function buildEscPosKotReceipt(
       encoder.bold(true).line(`   ${wrappedName[i]}`);
     }
 
-    // Add-ons if present
+    // Add-ons if present (stay within 25-column item area)
     if (item.addons && item.addons.length > 0) {
       item.addons.forEach((addon) => {
         const addonName = typeof addon === "string" ? addon : addon.name;
-        const wrappedAddon = wrapWords(`  + Add-on: ${addonName}`, 44);
-        wrappedAddon.forEach((l) => encoder.bold(false).line(l));
+        const wrappedAddon = wrapWords(`+ ${addonName}`, 25);
+        wrappedAddon.forEach((l) => encoder.bold(false).line(`   ${l}`));
       });
     }
 
     if (item.notes) {
-      encoder.bold(false).line(`  * Note: ${item.notes}`);
+      encoder.bold(false).line(`   * Note: ${item.notes}`);
     }
   });
 
@@ -263,7 +265,7 @@ export function buildEscPosBillReceipt(
   const encoder = new EscPosEncoder();
   encoder.init();
 
-  // 1. Header (Centered, bold outlet name, address & phone)
+  // 1. Header (Centered, bold outlet name in Standard Font A, address & phone)
   encoder.alignCenter().textSize(1, 2).bold(true).line(outletName || "Bombay Falooda");
   encoder.textSize(1, 1).bold(false);
 
@@ -307,7 +309,7 @@ export function buildEscPosBillReceipt(
   encoder.bold(true).line("No.Item".padEnd(26, " ") + "Qty.".padStart(6, " ") + "Price".padStart(8, " ") + "Amount".padStart(8, " "));
   encoder.solidLine();
 
-  // 4. Items with multi-line word wrapping and bold text
+  // 4. Items with multi-line word wrapping and column-constrained add-ons
   let totalQty = 0;
   let subTotal = 0;
 
@@ -322,21 +324,22 @@ export function buildEscPosBillReceipt(
     const priceStr = item.unitPrice.toFixed(2).padStart(8, " ");
     const amountStr = lineTotal.toFixed(2).padStart(8, " ");
 
-    // First line
+    // First line with item name and prices
     encoder.bold(true).line(`${numPrefix}${wrappedName[0].padEnd(22, " ")}${qtyStr}${priceStr}${amountStr}`);
 
-    // Subsequent lines indented
+    // Subsequent lines indented under item name only
     for (let i = 1; i < wrappedName.length; i++) {
       encoder.bold(true).line(`   ${wrappedName[i]}`);
     }
 
-    // Addons if present
+    // Addons strictly indented under item name column (22 cols max so they NEVER touch price/amount columns)
     if (item.addons && item.addons.length > 0) {
       item.addons.forEach((addon) => {
         const addonName = typeof addon === "string" ? addon : addon.name;
         const addonPrice = typeof addon === "object" && addon.price ? ` (+Rs ${addon.price.toFixed(2)})` : "";
-        const wrappedAddon = wrapWords(`   + ${addonName}${addonPrice}`, 44);
-        wrappedAddon.forEach((l) => encoder.bold(false).line(l));
+        const fullAddonText = `+ ${addonName}${addonPrice}`;
+        const wrappedAddon = wrapWords(fullAddonText, 22);
+        wrappedAddon.forEach((l) => encoder.bold(false).line(`   ${l}`));
       });
     }
   });
