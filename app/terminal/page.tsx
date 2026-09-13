@@ -2437,7 +2437,7 @@ export default function PosTerminalPage() {
                           {activeBill?.order?.id ? activeBill.order.id.slice(-4) : "2406"}
                         </div>
                       </div>
-                      <div style={{ borderTop: "1px dashed #000", margin: "6px 0 4px 0" }} />
+                      <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
                     </>
                   ) : null}
 
