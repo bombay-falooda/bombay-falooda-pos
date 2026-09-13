@@ -242,12 +242,7 @@ export default function PosSettingsPage() {
       } else {
         const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName;
         setTestResult(`🟢 Test slip dispatched to printer: ${targetPrinter || "System Default"}`);
-        const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
-        if (electron && typeof electron.printSilent === "function") {
-          electron.printSilent({ deviceName: targetPrinter });
-        } else {
-          setTimeout(() => window.print(), 250);
-        }
+        setTimeout(() => window.print(), 250);
       }
     } catch (err: any) {
       setTestResult(`🔴 Hardware test print failed: ${err.message || "Unknown error"}`);
