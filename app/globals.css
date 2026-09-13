@@ -80,7 +80,13 @@ textarea {
 }
 
 #print-ticket-root {
-  display: none;
+  position: fixed;
+  left: -99999px;
+  top: -99999px;
+  width: 72mm;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -9999;
 }
 
 @media print {
@@ -94,6 +100,7 @@ textarea {
   *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color: #000000 !important;
   }
 
   html,
@@ -103,27 +110,23 @@ textarea {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
-  /* Hide any element explicitly marked with no-print */
-  .no-print,
-  nav,
-  aside,
-  button,
-  input,
-  header {
-    display: none !important;
-  }
-
-  /* Show ONLY #print-ticket-root thermal receipt container */
-  body > *:not(#print-ticket-root):not(#__next):not(main) {
+  /* Hide the rest of the application */
+  body > *:not(#print-ticket-root) {
     display: none !important;
   }
 
   #print-ticket-root {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    opacity: 1 !important;
     display: block !important;
     visibility: visible !important;
-    position: static !important;
     width: 72mm !important;
     max-width: 72mm !important;
     margin: 0 auto !important;
@@ -132,11 +135,12 @@ textarea {
     color: #000000 !important;
     font-family: Arial, "Helvetica Neue", Helvetica, Roboto, sans-serif !important;
     font-size: 11px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     line-height: 1.25 !important;
     -webkit-font-smoothing: antialiased !important;
     text-rendering: optimizeLegibility !important;
     word-break: break-word !important;
+    z-index: 99999 !important;
   }
 
   #print-ticket-root * {
@@ -154,5 +158,6 @@ textarea {
   #print-ticket-root th,
   #print-ticket-root td {
     padding: 2px 0 !important;
+    color: #000000 !important;
   }
 }

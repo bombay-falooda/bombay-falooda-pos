@@ -61,6 +61,7 @@ export default function PosSettingsPage() {
   const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
   const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
 
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testingPrinter, setTestingPrinter] = useState(false);
   const [testResult, setTestResult] = useState("");
@@ -68,6 +69,7 @@ export default function PosSettingsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
       const savedType = localStorage.getItem("pos_printer_type");
       if (savedType === "BLUETOOTH" || savedType === "CABLE" || savedType === "USB_DIRECT") {
@@ -237,7 +239,13 @@ export default function PosSettingsPage() {
         setTestResult(`🟢 Bluetooth test receipt sent successfully to ${btDeviceName}`);
       } else {
         setTestResult("🟢 Triggering Windows driver print spooler...");
-        setTimeout(() => window.print(), 250);
+        const savedPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName;
+        const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
+        if (electron && typeof electron.printSilent === "function") {
+          electron.printSilent({ deviceName: savedPrinter });
+        } else {
+          setTimeout(() => window.print(), 250);
+        }
       }
     } catch (err: any) {
       setTestResult(`🔴 Hardware test print failed: ${err.message || "Unknown error"}`);
@@ -574,7 +582,7 @@ export default function PosSettingsPage() {
       </main>
 
       {/* 80MM / 58MM TEST THERMAL RECEIPT (VISIBLE ON PRINT) */}
-      {typeof document !== "undefined"
+      {mounted && typeof document !== "undefined"
         ? createPortal(
             <div id="print-ticket-root">
               <div style={{ textAlign: "center", lineHeight: "1.25" }}>
