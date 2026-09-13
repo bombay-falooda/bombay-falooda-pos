@@ -408,7 +408,12 @@ export default function PosTerminalPage() {
       kotBytes = buildEscPosKotReceipt(
         kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
         orderType,
-        (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes })),
+        (billData?.items || cart).map((i: any) => ({
+          name: i.name || i.item?.name || "Item",
+          quantity: i.quantity || 1,
+          notes: i.notes,
+          addons: Array.isArray(i.addons) ? i.addons.map((a: any) => ({ name: a.name || a.addon?.name || a, price: Number(a.price || 0) })) : [],
+        })),
         customerName || billData?.customerName || undefined,
         customerPhone || billData?.customerPhone || undefined
       );
@@ -422,10 +427,12 @@ export default function PosTerminalPage() {
         kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
         orderType,
         (billData?.items || cart).map((i: any) => ({
-          name: i.name,
+          name: i.name || i.item?.name || "Item",
           quantity: i.quantity || 1,
           unitPrice: Number(i.unitPrice || i.price || 0),
           total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
+          notes: i.notes,
+          addons: Array.isArray(i.addons) ? i.addons.map((a: any) => ({ name: a.name || a.addon?.name || a, price: Number(a.price || 0) })) : [],
         })),
         Number(billData?.total || payableTotal),
         (context?.outlet as any)?.phone || "9574754173",
