@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -571,6 +572,77 @@ export default function PosSettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* 80MM / 58MM TEST THERMAL RECEIPT (VISIBLE ON PRINT) */}
+      {typeof document !== "undefined"
+        ? createPortal(
+            <div id="print-ticket-root">
+              <div style={{ textAlign: "center", lineHeight: "1.25" }}>
+                <div style={{ fontWeight: "700", fontSize: "16px", marginBottom: "2px" }}>
+                  Bombay Falooda
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: "700" }}>
+                  Thermal Receipt Hardware Test
+                </div>
+                <div style={{ fontSize: "10px", fontWeight: "500", marginTop: "2px" }}>
+                  M. 9574754173 | Surat Branch
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
+
+              <div style={{ fontSize: "11px", lineHeight: "1.3" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                  <span style={{ fontWeight: "700" }}>TEST RECEIPT</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Time: {new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>Driver: {printerName || "Windows Spooler"}</span>
+                </div>
+                <div style={{ fontWeight: "700", marginTop: "2px" }}>
+                  Status: 🟢 Connected & Active
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
+
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #000" }}>
+                    <th style={{ textAlign: "left", paddingBottom: "2px" }}>Item</th>
+                    <th style={{ textAlign: "center", paddingBottom: "2px", width: "15%" }}>Qty</th>
+                    <th style={{ textAlign: "right", paddingBottom: "2px", width: "20%" }}>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ textAlign: "left", paddingTop: "4px" }}>Royal Falooda (Sample)</td>
+                    <td style={{ textAlign: "center", paddingTop: "4px" }}>1</td>
+                    <td style={{ textAlign: "right", paddingTop: "4px", fontWeight: "700" }}>₹90</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: "700" }}>
+                <span>Total Amount:</span>
+                <span>₹90.00</span>
+              </div>
+
+              <div style={{ borderTop: "1px solid #000", margin: "6px 0 4px 0" }} />
+
+              <div style={{ textAlign: "center", paddingTop: "4px", fontSize: "11px", fontWeight: "800", lineHeight: "1.4" }}>
+                <div>Printer Hardware Test Successful</div>
+                <div style={{ fontSize: "10px", marginTop: "2px", fontWeight: "600" }}>
+                  100% Silent Background Printing Ready
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
