@@ -90,9 +90,10 @@ export default function PosSettingsPage() {
           if (Array.isArray(printers) && printers.length > 0) {
             setDesktopPrinters(printers);
             const exists = savedName && printers.some((p) => p.name === savedName);
-            if (!exists) {
-              const defaultP = printers.find((p) => p.isDefault) || printers[0];
-              if (defaultP) setPrinterName(defaultP.name);
+            const chosen = exists ? savedName! : (printers.find((p) => p.isDefault) || printers[0]).name;
+            setPrinterName(chosen);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("pos_printer_name", chosen);
             }
           }
         }).catch(() => {});
@@ -479,7 +480,12 @@ export default function PosSettingsPage() {
                       </label>
                       <select
                         value={printerName}
-                        onChange={(e) => setPrinterName(e.target.value)}
+                        onChange={(e) => {
+                          setPrinterName(e.target.value);
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem("pos_printer_name", e.target.value);
+                          }
+                        }}
                         className="w-full h-9 rounded-lg border border-slate-300 px-2 text-xs font-semibold bg-white outline-none cursor-pointer"
                       >
                         {desktopPrinters.map((p) => (
