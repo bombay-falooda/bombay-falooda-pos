@@ -105,7 +105,8 @@ class EscPosEncoder {
   }
 
   bold(enable: boolean) {
-    this.buffer.push(0x1b, 0x45, enable ? 0x01 : 0x00);
+    this.buffer.push(0x1b, 0x45, enable ? 0x01 : 0x00); // ESC E (Emphasized)
+    this.buffer.push(0x1b, 0x47, enable ? 0x01 : 0x00); // ESC G (Double-strike deep bold)
     return this;
   }
 
@@ -128,12 +129,12 @@ class EscPosEncoder {
   }
 
   solidLine() {
-    this.line("________________________________________________");
+    this.bold(false).line("________________________________________________");
     return this;
   }
 
   dashedLine() {
-    this.line("------------------------------------------------");
+    this.bold(false).line("------------------------------------------------");
     return this;
   }
 
@@ -190,14 +191,14 @@ export function buildEscPosKotReceipt(
   const dateStr = `${now.toLocaleDateString("en-GB")} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
   encoder.alignCenter().bold(false).textSize(1, 1).line(dateStr);
 
-  // KOT Header (Centered, bold)
-  encoder.alignCenter().bold(true).textSize(2, 2).line(`KOT - ${kotNumber.replace("KOT-", "")}`);
+  // KOT Header (Centered, double size, extra bold)
+  encoder.alignCenter().textSize(2, 2).bold(true).line(`KOT - ${kotNumber.replace("KOT-", "")}`);
   const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
-  encoder.textSize(1, 2).line(ordTypeLabel);
+  encoder.textSize(1, 2).bold(true).line(ordTypeLabel);
 
   // Customer if provided
   if (customerName || customerPhone) {
-    encoder.textSize(1, 1).bold(false).alignLeft();
+    encoder.textSize(1, 1).bold(true).alignLeft();
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
     encoder.line(`${cust}${ph}`);
@@ -263,7 +264,7 @@ export function buildEscPosBillReceipt(
   encoder.init();
 
   // 1. Header (Centered, bold outlet name, address & phone)
-  encoder.alignCenter().bold(true).textSize(1, 2).line(outletName || "Bombay Falooda");
+  encoder.alignCenter().textSize(1, 2).bold(true).line(outletName || "Bombay Falooda");
   encoder.textSize(1, 1).bold(false);
 
   if (outletAddress) {
@@ -271,7 +272,7 @@ export function buildEscPosBillReceipt(
     wrappedAddr.forEach((line) => encoder.line(line));
   }
   if (phone) {
-    encoder.line(`M. ${phone}`);
+    encoder.bold(true).line(`M. ${phone}`);
   }
   encoder.solidLine();
 
@@ -280,7 +281,8 @@ export function buildEscPosBillReceipt(
   if (customerName || customerPhone) {
     const cust = customerName ? `Name: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
-    encoder.line(`${cust}${ph}`);
+    encoder.bold(true).line(`${cust}${ph}`);
+    encoder.bold(false);
   }
 
   const now = new Date();
@@ -297,14 +299,15 @@ export function buildEscPosBillReceipt(
   const cashierStr = `Cashier: ${cashierName || "biller"}`.padEnd(24, " ");
   const tokenClean = tokenNumber.replace("KOT-", "").replace("TOKEN-", "");
   const tokenStr = `Token No.: ${tokenClean}`.padStart(24, " ");
-  encoder.line(`${cashierStr}${tokenStr}`);
+  encoder.bold(true).line(`${cashierStr}${tokenStr}`);
+  encoder.bold(false);
   encoder.solidLine();
 
   // 3. Table Header (48 cols: No.Item 26, Qty. 6, Price 8, Amount 8)
   encoder.bold(true).line("No.Item".padEnd(26, " ") + "Qty.".padStart(6, " ") + "Price".padStart(8, " ") + "Amount".padStart(8, " "));
   encoder.solidLine();
 
-  // 4. Items with multi-line word wrapping and add-ons
+  // 4. Items with multi-line word wrapping and bold text
   let totalQty = 0;
   let subTotal = 0;
 
@@ -320,11 +323,11 @@ export function buildEscPosBillReceipt(
     const amountStr = lineTotal.toFixed(2).padStart(8, " ");
 
     // First line
-    encoder.bold(false).line(`${numPrefix}${wrappedName[0].padEnd(22, " ")}${qtyStr}${priceStr}${amountStr}`);
+    encoder.bold(true).line(`${numPrefix}${wrappedName[0].padEnd(22, " ")}${qtyStr}${priceStr}${amountStr}`);
 
     // Subsequent lines indented
     for (let i = 1; i < wrappedName.length; i++) {
-      encoder.line(`   ${wrappedName[i]}`);
+      encoder.bold(true).line(`   ${wrappedName[i]}`);
     }
 
     // Addons if present
@@ -333,27 +336,27 @@ export function buildEscPosBillReceipt(
         const addonName = typeof addon === "string" ? addon : addon.name;
         const addonPrice = typeof addon === "object" && addon.price ? ` (+Rs ${addon.price.toFixed(2)})` : "";
         const wrappedAddon = wrapWords(`   + ${addonName}${addonPrice}`, 44);
-        wrappedAddon.forEach((l) => encoder.line(l));
+        wrappedAddon.forEach((l) => encoder.bold(false).line(l));
       });
     }
   });
 
   encoder.solidLine();
 
-  // 5. Totals Block
+  // 5. Totals Block (Bold)
   const totalQtyStr = `Total Qty: ${totalQty}`.padEnd(24, " ");
   const subTotalStr = `Sub Total  ${subTotal.toFixed(2)}`.padStart(24, " ");
-  encoder.line(`${totalQtyStr}${subTotalStr}`);
+  encoder.bold(true).line(`${totalQtyStr}${subTotalStr}`);
 
   if (discountAmount && discountAmount > 0) {
     const discStr = `Discount  ${discountAmount.toFixed(2)}`.padStart(48, " ");
-    encoder.line(discStr);
+    encoder.bold(true).line(discStr);
   }
 
   encoder.solidLine();
 
-  // 6. Grand Total (Clean double-height, perfectly proportioned)
-  encoder.alignCenter().bold(true).textSize(1, 2).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
+  // 6. Grand Total (Deep double-height bold)
+  encoder.alignCenter().textSize(1, 2).bold(true).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
   encoder.textSize(1, 1).bold(false).solidLine();
 
   // 7. Footer
