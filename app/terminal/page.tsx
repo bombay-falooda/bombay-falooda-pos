@@ -394,75 +394,78 @@ export default function PosTerminalPage() {
   async function triggerThermalPrint(mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY", billData?: Bill | null, kotNumber?: string) {
     setPrintMode(mode);
 
-    // 1. DIRECT USB CABLE DRIVER (0 Preview Dialog / 0ms Screen Flash)
+    const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
+    const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || "POS-80";
+
+    // Build binary ESC/POS buffers
+    let kotBytes: Uint8Array | null = null;
+    let billBytes: Uint8Array | null = null;
+
+    if (mode === "KOT_ONLY" || mode === "BOTH") {
+      kotBytes = buildEscPosKotReceipt(
+        kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+        orderType,
+        (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
+      );
+    }
+
+    if (mode === "BILL_ONLY" || mode === "BOTH") {
+      billBytes = buildEscPosBillReceipt(
+        context?.outlet.name || "BOMBAY FALOODA",
+        context?.outlet.address || "Vadodara Branch",
+        billData?.billNumber || "1",
+        kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
+        orderType,
+        (billData?.items || cart).map((i: any) => ({
+          name: i.name,
+          quantity: i.quantity || 1,
+          unitPrice: Number(i.unitPrice || i.price || 0),
+          total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
+        })),
+        Number(billData?.total || payableTotal),
+        (context?.outlet as any)?.phone || "9574754173",
+        (context as any)?.user?.name || (context as any)?.billerName || "biller"
+      );
+    }
+
+    // 1. ELECTRON DESKTOP APP NATIVE WIN32 RAW ESC/POS PRINT (0ms / Zero Dialog / 100% Reliable)
+    if (electron && typeof electron.printRawEscPos === "function") {
+      try {
+        if (kotBytes) {
+          await electron.printRawEscPos(kotBytes, targetPrinter);
+        }
+        if (billBytes) {
+          await electron.printRawEscPos(billBytes, targetPrinter);
+        }
+        return;
+      } catch (err) {
+        console.warn("Electron native raw print error:", err);
+      }
+    }
+
+    // 2. DIRECT USB CABLE DRIVER (0 Preview Dialog / 0ms Screen Flash)
     if (printerConnectionType === "USB_DIRECT") {
       try {
-        if (mode === "KOT_ONLY" || mode === "BOTH") {
-          const kotBytes = buildEscPosKotReceipt(
-            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
-            orderType,
-            (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
-          );
-          await sendEscPosToUsb(kotBytes);
-        }
-        if (mode === "BILL_ONLY" || mode === "BOTH") {
-          const billBytes = buildEscPosBillReceipt(
-            context?.outlet.name || "Bombay Falooda",
-            context?.outlet.address || "Vadodara",
-            billData?.billNumber || "1",
-            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
-            orderType,
-            (billData?.items || cart).map((i: any) => ({
-              name: i.name,
-              quantity: i.quantity || 1,
-              unitPrice: Number(i.unitPrice || i.price || 0),
-              total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
-            })),
-            Number(billData?.total || payableTotal)
-          );
-          await sendEscPosToUsb(billBytes);
-        }
+        if (kotBytes) await sendEscPosToUsb(kotBytes);
+        if (billBytes) await sendEscPosToUsb(billBytes);
         return;
       } catch (err: any) {
-        console.warn("Direct USB print failed, falling back to window.print():", err);
+        console.warn("Direct USB print failed, falling back:", err);
       }
     }
 
-    // 2. DIRECT BLUETOOTH DRIVER (0 Preview Dialog / 0ms Screen Flash)
+    // 3. DIRECT BLUETOOTH DRIVER (0 Preview Dialog / 0ms Screen Flash)
     if (printerConnectionType === "BLUETOOTH" && btDeviceName) {
       try {
-        if (mode === "KOT_ONLY" || mode === "BOTH") {
-          const kotBytes = buildEscPosKotReceipt(
-            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
-            orderType,
-            (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
-          );
-          await sendEscPosToBluetooth(kotBytes);
-        }
-        if (mode === "BILL_ONLY" || mode === "BOTH") {
-          const billBytes = buildEscPosBillReceipt(
-            context?.outlet.name || "Bombay Falooda",
-            context?.outlet.address || "Vadodara",
-            billData?.billNumber || "1",
-            kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
-            orderType,
-            (billData?.items || cart).map((i: any) => ({
-              name: i.name,
-              quantity: i.quantity || 1,
-              unitPrice: Number(i.unitPrice || i.price || 0),
-              total: Number(i.total || (i.unitPrice || i.price || 0) * (i.quantity || 1)),
-            })),
-            Number(billData?.total || payableTotal)
-          );
-          await sendEscPosToBluetooth(billBytes);
-        }
+        if (kotBytes) await sendEscPosToBluetooth(kotBytes);
+        if (billBytes) await sendEscPosToBluetooth(billBytes);
         return;
       } catch (err: any) {
-        console.warn("Bluetooth thermal print failed, falling back to USB cable / Windows driver:", err);
+        console.warn("Bluetooth thermal print failed, falling back:", err);
       }
     }
 
-    // 3. FALLBACK TO WINDOWS DRIVER / KIOSK SPOOLER
+    // 4. FALLBACK TO BROWSER / KIOSK PRINT
     setTimeout(() => window.print(), 350);
   }
 
@@ -704,7 +707,7 @@ export default function PosTerminalPage() {
       await loadTerminal();
       setMessage(`KOT created & linked to Bill ${activeBill.billNumber}.`);
       if (shouldPrint) {
-        setTimeout(() => window.print(), 300);
+        await triggerThermalPrint("KOT_ONLY", activeBill);
       }
     });
   }
@@ -731,7 +734,7 @@ export default function PosTerminalPage() {
       await loadTerminal();
       setMessage(`Bill ${bill.billNumber} finalized & paid.`);
       if (shouldPrint) {
-        setTimeout(() => window.print(), 300);
+        await triggerThermalPrint("BILL_ONLY", bill);
       }
     });
   }

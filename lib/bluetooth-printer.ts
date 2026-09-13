@@ -150,24 +150,29 @@ class EscPosEncoder {
   }
 }
 
-export function buildEscPosKotReceipt(kotNumber: string, orderType: string, items: Array<{ name: string; quantity: number; notes?: string }>): Uint8Array {
+export function buildEscPosKotReceipt(
+  kotNumber: string,
+  orderType: string,
+  items: Array<{ name: string; quantity: number; notes?: string }>
+): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.init();
-  encoder.alignCenter().bold(true).line("KOT - " + kotNumber.replace("KOT-", ""));
-  encoder.textSize(1, 1).line(orderType.toUpperCase());
-  encoder.line(new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
+  encoder.alignCenter().bold(true).textSize(2, 2).line(`KOT - ${kotNumber.replace("KOT-", "")}`);
+  encoder.textSize(1, 1).bold(false).line(`ORDER: ${orderType.toUpperCase()}`);
+  const now = new Date();
+  encoder.line(`${now.toLocaleDateString("en-GB")} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`);
   encoder.dashedLine();
 
-  encoder.alignLeft().bold(true).line("No.  Item                        Qty");
+  encoder.alignLeft().bold(true).line("No.  Item Name".padEnd(38, " ") + "Qty".padStart(10, " "));
   encoder.dashedLine();
 
   items.forEach((item, idx) => {
-    const num = (idx + 1).toString().padStart(2, " ");
-    const name = item.name.padEnd(28, " ").substring(0, 28);
-    const qty = item.quantity.toString().padStart(4, " ");
-    encoder.bold(false).line(`${num}  ${name} ${qty}`);
+    const num = `${idx + 1}.`.padEnd(5, " ");
+    const name = item.name.padEnd(33, " ").substring(0, 33);
+    const qty = item.quantity.toString().padStart(10, " ");
+    encoder.bold(false).line(`${num}${name}${qty}`);
     if (item.notes) {
-      encoder.line(`     Note: ${item.notes}`);
+      encoder.line(`     >> Note: ${item.notes}`);
     }
   });
 
@@ -183,37 +188,52 @@ export function buildEscPosBillReceipt(
   tokenNumber: string,
   orderType: string,
   items: Array<{ name: string; quantity: number; unitPrice: number; total: number }>,
-  totalAmount: number
+  totalAmount: number,
+  phone?: string,
+  cashierName?: string
 ): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.init();
 
   // Header
   encoder.alignCenter().bold(true).textSize(2, 2).line(outletName || "BOMBAY FALOODA");
-  encoder.textSize(1, 1).bold(false).line(outletAddress || "Store Outlet Terminal");
+  encoder.textSize(1, 1).bold(false);
+  if (outletAddress) encoder.line(outletAddress);
+  if (phone) encoder.line(`Ph: ${phone}`);
   encoder.dashedLine();
 
-  // Details
-  encoder.alignLeft().line(`Bill No: ${billNumber.replace("BILL-", "")}      Token No: ${tokenNumber.replace("KOT-", "")}`);
-  encoder.line(`Date: ${new Date().toLocaleDateString("en-GB")} ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`);
-  encoder.line(`Type: ${orderType}`);
+  // Details (48 columns)
+  encoder.alignLeft().bold(false);
+  const now = new Date();
+  const dateStr = `Date: ${now.toLocaleDateString("en-GB")}`.padEnd(24, " ");
+  const timeStr = `Time: ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  encoder.line(`${dateStr}${timeStr}`);
+
+  const billStr = `Bill No: ${billNumber.replace("BILL-", "")}`.padEnd(24, " ");
+  const orderStr = `Order: ${orderType}`;
+  encoder.line(`${billStr}${orderStr}`);
+
+  const tokenStr = `Token No: ${tokenNumber.replace("KOT-", "")}`.padEnd(24, " ");
+  const cashierStr = `Cashier: ${cashierName || "biller"}`;
+  encoder.line(`${tokenStr}${cashierStr}`);
   encoder.dashedLine();
 
-  // Table
-  encoder.bold(true).line("Item                         Qty    Price   Amount");
+  // Table (48 cols: Item Name 28, Qty 6, Amount 14)
+  encoder.bold(true).line("Item Name".padEnd(28, " ") + "Qty".padStart(6, " ") + "Amount".padStart(14, " "));
   encoder.dashedLine();
 
   items.forEach((item) => {
-    const name = item.name.padEnd(24, " ").substring(0, 24);
-    const qty = item.quantity.toString().padStart(3, " ");
-    const price = item.unitPrice.toFixed(0).padStart(7, " ");
-    const total = item.total.toFixed(0).padStart(8, " ");
-    encoder.bold(false).line(`${name} ${qty} ${price} ${total}`);
+    const name = item.name.padEnd(28, " ").substring(0, 28);
+    const qty = item.quantity.toString().padStart(6, " ");
+    const amt = item.total.toFixed(2).padStart(14, " ");
+    encoder.bold(false).line(`${name}${qty}${amt}`);
   });
 
   encoder.dashedLine();
-  encoder.alignRight().bold(true).textSize(2, 1).line(`TOTAL: INR ${totalAmount.toFixed(2)}`);
-  encoder.textSize(1, 1).alignCenter().line("Thank You! Visit Again");
+  encoder.alignCenter().bold(true).textSize(2, 2).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
+  encoder.textSize(1, 1).dashedLine();
+  encoder.alignCenter().bold(false).line("Thank You! Please Visit Again");
+  encoder.line("Please wait for 10 minutes after ordering.");
   encoder.cut();
 
   return encoder.encode();

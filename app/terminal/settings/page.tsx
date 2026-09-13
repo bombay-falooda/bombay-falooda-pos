@@ -219,6 +219,25 @@ export default function PosSettingsPage() {
     setError("");
 
     try {
+      const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
+      const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName || "POS-80";
+
+      // 1. Desktop App Native Win32 Spooler Raw Print (Zero-Dialog, Instant Thermal Print)
+      if (electron && typeof electron.printRawEscPos === "function") {
+        const kotBytes = buildEscPosKotReceipt(
+          "TEST-1",
+          "TAKEAWAY",
+          [{ name: "Pista Falooda (Test)", quantity: 1, notes: "Direct Windows Spooler Raw Slip Test" }]
+        );
+        const res = await electron.printRawEscPos(kotBytes, targetPrinter);
+        if (res && res.success) {
+          setTestResult(`🟢 Test receipt printed instantly via Windows Thermal Driver (${targetPrinter})!`);
+        } else {
+          setTestResult(`🔴 Test print error: ${res?.error || "Unknown error"}`);
+        }
+        return;
+      }
+
       if (printerConnectionType === "USB_DIRECT") {
         const kotBytes = buildEscPosKotReceipt(
           "TEST-1",
@@ -240,7 +259,6 @@ export default function PosSettingsPage() {
         await sendEscPosToBluetooth(kotBytes);
         setTestResult(`🟢 Bluetooth test receipt sent successfully to ${btDeviceName}`);
       } else {
-        const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName;
         setTestResult(`🟢 Test slip dispatched to printer: ${targetPrinter || "System Default"}`);
         setTimeout(() => window.print(), 250);
       }
