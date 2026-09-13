@@ -143,6 +143,8 @@ export default function PosTerminalPage() {
   const [printerIp, setPrinterIp] = useState("192.168.1.100");
   const [paperWidth, setPaperWidth] = useState("80mm");
   const [autoCut, setAutoCut] = useState(true);
+  const [isDesktopApp, setIsDesktopApp] = useState(false);
+  const [desktopPrinters, setDesktopPrinters] = useState<Array<{ name: string; isDefault?: boolean }>>([]);
 
   // Team Members State
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; fullName: string; email?: string; phone?: string; role: string; status: string; checkInTime: string }>>([
@@ -167,6 +169,21 @@ export default function PosTerminalPage() {
       if (savedIp) setPrinterIp(savedIp);
       const savedPaper = localStorage.getItem("pos_printer_paper");
       if (savedPaper) setPaperWidth(savedPaper);
+
+      // Detect Electron Desktop App Native Printers
+      const electron = (window as any).electronAPI;
+      if (electron && typeof electron.getPrinters === "function") {
+        setIsDesktopApp(true);
+        electron.getPrinters().then((printers: any[]) => {
+          if (Array.isArray(printers) && printers.length > 0) {
+            setDesktopPrinters(printers);
+            if (!savedName) {
+              const defaultP = printers.find((p) => p.isDefault) || printers[0];
+              if (defaultP) setPrinterName(defaultP.name);
+            }
+          }
+        }).catch(() => {});
+      }
     }
     const token = getPosToken();
     const savedContext = getSavedPosContext();
@@ -1972,16 +1989,39 @@ export default function PosTerminalPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2 shadow-2xs">
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5 shadow-2xs">
                       <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                        <span>USB Cable / Driver Status:</span>
+                        <span>USB Cable / Desktop Driver:</span>
                         <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                          🟢 Active (USB / Windows Driver)
+                          {isDesktopApp ? "⚡ Desktop Native (.exe)" : "🟢 Active (USB / Driver)"}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-500 leading-tight">
-                        Connect thermal printer via USB cable to PC. Uses default Windows printer driver or Chrome kiosk auto-print (<code className="bg-slate-100 px-1 py-0.5 rounded text-blue-600 font-mono">--kiosk-printing</code>).
-                      </p>
+
+                      {desktopPrinters.length > 0 ? (
+                        <div className="space-y-1 pt-1">
+                          <label className="text-[11px] font-bold text-slate-600 block">
+                            Select Installed Hardware Printer:
+                          </label>
+                          <select
+                            value={printerName}
+                            onChange={(e) => setPrinterName(e.target.value)}
+                            className="w-full h-9 rounded-lg border border-slate-300 px-2 text-xs font-semibold bg-white outline-none cursor-pointer"
+                          >
+                            {desktopPrinters.map((p) => (
+                              <option key={p.name} value={p.name}>
+                                🖨️ {p.name} {p.isDefault ? "(Windows Default)" : ""}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-[10px] text-slate-500 leading-tight">
+                            Orders and receipts will print 100% silently to this thermal printer with zero dialogs.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-500 leading-tight">
+                          Connect thermal printer via USB cable. Automatically uses your configured printer or Windows default.
+                        </p>
+                      )}
                     </div>
                   )}
 
