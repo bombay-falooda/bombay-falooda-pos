@@ -408,14 +408,16 @@ export default function PosTerminalPage() {
       kotBytes = buildEscPosKotReceipt(
         kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
         orderType,
-        (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes }))
+        (billData?.items || cart).map((i: any) => ({ name: i.name, quantity: i.quantity || 1, notes: i.notes })),
+        customerName || billData?.customerName || undefined,
+        customerPhone || billData?.customerPhone || undefined
       );
     }
 
     if (mode === "BILL_ONLY" || mode === "BOTH") {
       billBytes = buildEscPosBillReceipt(
-        context?.outlet.name || "BOMBAY FALOODA",
-        context?.outlet.address || "Vadodara Branch",
+        context?.outlet.name || "Bombay Falooda",
+        context?.outlet.address || "Opp Sayaji vihar club , near khanderav market , raj mahal road vadodara.",
         billData?.billNumber || "1",
         kotNumber || billData?.kotTickets?.[0]?.kotNumber || "1",
         orderType,
@@ -427,7 +429,10 @@ export default function PosTerminalPage() {
         })),
         Number(billData?.total || payableTotal),
         (context?.outlet as any)?.phone || "9574754173",
-        (context as any)?.user?.name || (context as any)?.billerName || "biller"
+        (context as any)?.user?.name || (context as any)?.billerName || "biller",
+        customerName || billData?.customerName || undefined,
+        customerPhone || billData?.customerPhone || undefined,
+        Number(discount || billData?.discount || 0)
       );
     }
 
