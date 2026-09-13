@@ -89,7 +89,8 @@ export default function PosSettingsPage() {
         electron.getPrinters().then((printers: any[]) => {
           if (Array.isArray(printers) && printers.length > 0) {
             setDesktopPrinters(printers);
-            if (!savedName) {
+            const exists = savedName && printers.some((p) => p.name === savedName);
+            if (!exists) {
               const defaultP = printers.find((p) => p.isDefault) || printers[0];
               if (defaultP) setPrinterName(defaultP.name);
             }
@@ -238,11 +239,11 @@ export default function PosSettingsPage() {
         await sendEscPosToBluetooth(kotBytes);
         setTestResult(`🟢 Bluetooth test receipt sent successfully to ${btDeviceName}`);
       } else {
-        setTestResult("🟢 Triggering Windows driver print spooler...");
-        const savedPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName;
+        const targetPrinter = (typeof window !== "undefined" ? localStorage.getItem("pos_printer_name") : "") || printerName;
+        setTestResult(`🟢 Test slip dispatched to printer: ${targetPrinter || "System Default"}`);
         const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
         if (electron && typeof electron.printSilent === "function") {
-          electron.printSilent({ deviceName: savedPrinter });
+          electron.printSilent({ deviceName: targetPrinter });
         } else {
           setTimeout(() => window.print(), 250);
         }
