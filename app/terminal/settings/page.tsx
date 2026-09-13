@@ -52,6 +52,8 @@ export default function PosSettingsPage() {
   const [printerIp, setPrinterIp] = useState("192.168.1.100");
   const [paperWidth, setPaperWidth] = useState("80mm");
   const [autoCut, setAutoCut] = useState(true);
+  const [isDesktopApp, setIsDesktopApp] = useState(false);
+  const [desktopPrinters, setDesktopPrinters] = useState<Array<{ name: string; isDefault?: boolean }>>([]);
 
   // Printer Connection Mode & Hardware States
   const [printerConnectionType, setPrinterConnectionType] = useState<"USB_DIRECT" | "BLUETOOTH" | "CABLE">("USB_DIRECT");
@@ -76,6 +78,21 @@ export default function PosSettingsPage() {
       if (savedIp) setPrinterIp(savedIp);
       const savedPaper = localStorage.getItem("pos_printer_paper");
       if (savedPaper) setPaperWidth(savedPaper);
+
+      // Detect Electron Desktop App Native Printers
+      const electron = (window as any).electronAPI;
+      if (electron && typeof electron.getPrinters === "function") {
+        setIsDesktopApp(true);
+        electron.getPrinters().then((printers: any[]) => {
+          if (Array.isArray(printers) && printers.length > 0) {
+            setDesktopPrinters(printers);
+            if (!savedName) {
+              const defaultP = printers.find((p) => p.isDefault) || printers[0];
+              if (defaultP) setPrinterName(defaultP.name);
+            }
+          }
+        }).catch(() => {});
+      }
     }
     const token = getPosToken();
     const savedContext = getSavedPosContext();
@@ -113,7 +130,7 @@ export default function PosSettingsPage() {
       setMessage("");
       setError("");
       const nextState = !twoFactorEnabled;
-      const res = await apiRequest<{ message: string; twoFactorEnabled: boolean }>(
+      const res = await apiRequest<{ twoFactorEnabled: boolean; message: string }>(
         "/pos-terminal/settings/2fa",
         {
           method: "PATCH",
@@ -139,6 +156,10 @@ export default function PosSettingsPage() {
       }
       setMessage(`Successfully connected to USB Cable Thermal Printer: ${name}`);
     } catch (err: any) {
+      if (err?.message?.includes("No port selected") || err?.name === "NotFoundError") {
+        setMessage("No raw serial port was selected. In the Desktop App, simply select your printer from the Windows Driver list below!");
+        return;
+      }
       setError(err.message || "Failed to pair USB printer");
     }
   }
@@ -433,23 +454,53 @@ export default function PosSettingsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 space-y-1">
-                  <p className="font-bold text-slate-800">Windows Spooler / Chrome Kiosk Mode</p>
-                  <p>
-                    Plug USB cable from thermal printer into PC. Uses default Windows printer driver or Chrome kiosk auto-print (<code className="bg-white px-1 py-0.5 rounded text-blue-600 border">--kiosk-printing</code>).
-                  </p>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-slate-800">Windows Desktop Native Driver</p>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                      {isDesktopApp ? "⚡ Desktop Native (.exe)" : "🟢 Active"}
+                    </span>
+                  </div>
+
+                  {desktopPrinters.length > 0 ? (
+                    <div className="space-y-1 pt-1">
+                      <label className="text-[11px] font-bold text-slate-600 block">
+                        Select Installed Thermal Printer:
+                      </label>
+                      <select
+                        value={printerName}
+                        onChange={(e) => setPrinterName(e.target.value)}
+                        className="w-full h-9 rounded-lg border border-slate-300 px-2 text-xs font-semibold bg-white outline-none cursor-pointer"
+                      >
+                        {desktopPrinters.map((p) => (
+                          <option key={p.name} value={p.name}>
+                            🖨️ {p.name} {p.isDefault ? "(Windows Default)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-slate-500 leading-tight">
+                        Orders & receipts will print 100% silently to this thermal printer with zero dialogs.
+                      </p>
+                    </div>
+                  ) : (
+                    <p>
+                      Connect thermal printer via USB cable to PC. Automatically sends print jobs to the selected Windows printer driver.
+                    </p>
+                  )}
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Printer Device Model Name</label>
-                <input
-                  type="text"
-                  value={printerName}
-                  onChange={(e) => setPrinterName(e.target.value)}
-                  className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-800 outline-none focus:border-[#b82e46]"
-                />
-              </div>
+              {desktopPrinters.length === 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Printer Device Model Name</label>
+                  <input
+                    type="text"
+                    value={printerName}
+                    onChange={(e) => setPrinterName(e.target.value)}
+                    className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-800 outline-none focus:border-[#b82e46]"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Network Printer IP Address</label>
