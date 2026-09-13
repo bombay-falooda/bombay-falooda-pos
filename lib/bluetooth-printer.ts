@@ -85,9 +85,8 @@ class EscPosEncoder {
   private buffer: number[] = [];
 
   init() {
-    this.buffer.push(0x1b, 0x40); // ESC @ (Initialize printer)
-    this.buffer.push(0x1b, 0x4d, 0x00); // ESC M 0 (Standard Font A 12x24)
-    this.buffer.push(0x1b, 0x32); // ESC 2 (Default line spacing)
+    this.buffer.push(0x1b, 0x40); // ESC @ (Reset)
+    this.buffer.push(0x1b, 0x21, 0x00); // ESC ! 0 (Standard Character Mode - Normal Font)
     return this;
   }
 
@@ -108,7 +107,6 @@ class EscPosEncoder {
 
   bold(enable: boolean) {
     this.buffer.push(0x1b, 0x45, enable ? 0x01 : 0x00); // ESC E (Emphasized)
-    this.buffer.push(0x1b, 0x47, enable ? 0x01 : 0x00); // ESC G (Double-strike deep bold)
     return this;
   }
 
@@ -131,12 +129,12 @@ class EscPosEncoder {
   }
 
   solidLine() {
-    this.bold(false).line("________________________________________________");
+    this.line("------------------------------------------------");
     return this;
   }
 
   dashedLine() {
-    this.bold(false).line("------------------------------------------------");
+    this.line("------------------------------------------------");
     return this;
   }
 
@@ -188,58 +186,54 @@ export function buildEscPosKotReceipt(
   const encoder = new EscPosEncoder();
   encoder.init();
 
-  // Date and Time
-  const now = new Date();
-  const dateStr = `${now.toLocaleDateString("en-GB")} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
-  encoder.alignCenter().bold(false).textSize(1, 1).line(dateStr);
-
-  // KOT Header (Centered, double size, extra bold)
-  encoder.alignCenter().textSize(2, 2).bold(true).line(`KOT - ${kotNumber.replace("KOT-", "")}`);
+  // Header
+  encoder.alignCenter();
+  encoder.line(new Date().toLocaleDateString("en-GB") + "   " + new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
+  encoder.bold(true).line(`KOT - ${kotNumber.replace("KOT-", "")}`);
   const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
-  encoder.textSize(1, 2).bold(true).line(ordTypeLabel);
+  encoder.line(`Order: ${ordTypeLabel}`);
+  encoder.bold(false);
 
-  // Customer if provided
   if (customerName || customerPhone) {
-    encoder.textSize(1, 1).bold(true).alignLeft();
+    encoder.alignLeft();
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
     encoder.line(`${cust}${ph}`);
   }
 
-  // Solid Divider
-  encoder.textSize(1, 1).bold(false).alignLeft().solidLine();
+  encoder.alignLeft().solidLine();
 
-  // Table Header (48 cols: No.Item 28 cols, Special Note 12 cols, Qty. 8 cols)
-  encoder.bold(true).line("No.Item".padEnd(28, " ") + "Special   ".padEnd(12, " ") + "Qty.".padStart(8, " "));
-  encoder.line(" ".padEnd(28, " ") + "Note      ".padEnd(12, " ") + "    ".padStart(8, " "));
-  encoder.solidLine();
+  // Table Header (48 cols: Item Name 30, Qty 8, Special Note 10)
+  encoder.bold(true).line("No. Item Name".padEnd(28, " ") + "Special Note".padEnd(14, " ") + "Qty".padStart(6, " "));
+  encoder.bold(false).solidLine();
 
   // Items
   items.forEach((item, idx) => {
-    const numPrefix = `${idx + 1}  `;
+    const numPrefix = `${idx + 1}. `.padEnd(3, " ");
     const wrappedName = wrapWords(item.name, 23);
-    const qtyStr = item.quantity.toString().padStart(8, " ");
-    const noteStr = (item.notes || "--").padEnd(12, " ").substring(0, 12);
+    const qtyStr = item.quantity.toString().padStart(6, " ");
+    const noteStr = (item.notes || "--").padEnd(14, " ").substring(0, 14);
 
     // First line
     encoder.bold(true).line(`${numPrefix}${wrappedName[0].padEnd(25, " ")}${noteStr}${qtyStr}`);
+    encoder.bold(false);
 
-    // Subsequent wrapped lines indented
+    // Subsequent wrapped lines
     for (let i = 1; i < wrappedName.length; i++) {
-      encoder.bold(true).line(`   ${wrappedName[i]}`);
+      encoder.line(`   ${wrappedName[i]}`);
     }
 
-    // Add-ons if present (stay within 25-column item area)
+    // Addons
     if (item.addons && item.addons.length > 0) {
       item.addons.forEach((addon) => {
         const addonName = typeof addon === "string" ? addon : addon.name;
         const wrappedAddon = wrapWords(`+ ${addonName}`, 25);
-        wrappedAddon.forEach((l) => encoder.bold(false).line(`   ${l}`));
+        wrappedAddon.forEach((l) => encoder.line(`   ${l}`));
       });
     }
 
     if (item.notes) {
-      encoder.bold(false).line(`   * Note: ${item.notes}`);
+      encoder.line(`   * Note: ${item.notes}`);
     }
   });
 
@@ -265,23 +259,23 @@ export function buildEscPosBillReceipt(
   const encoder = new EscPosEncoder();
   encoder.init();
 
-  // 1. Header (Centered, bold outlet name in Standard Font A, address & phone)
-  encoder.alignCenter().textSize(1, 2).bold(true).line(outletName || "Bombay Falooda");
-  encoder.textSize(1, 1).bold(false);
+  // 1. Header (Centered, clean standard font)
+  encoder.alignCenter().bold(true).line(outletName ? outletName.toUpperCase() : "BOMBAY FALOODA");
+  encoder.bold(false);
 
   if (outletAddress) {
     const wrappedAddr = wrapWords(outletAddress, 42);
     wrappedAddr.forEach((line) => encoder.line(line));
   }
   if (phone) {
-    encoder.bold(true).line(`M. ${phone}`);
+    encoder.line(`Ph: ${phone}`);
   }
   encoder.solidLine();
 
-  // 2. Details Block (48 cols)
-  encoder.alignLeft().bold(false);
+  // 2. Info Block (48 cols)
+  encoder.alignLeft();
   if (customerName || customerPhone) {
-    const cust = customerName ? `Name: ${customerName}` : "";
+    const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
     encoder.bold(true).line(`${cust}${ph}`);
     encoder.bold(false);
@@ -295,21 +289,20 @@ export function buildEscPosBillReceipt(
   const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
   const ordStr = `Order: ${ordTypeLabel}`.padEnd(24, " ");
   const billNoClean = billNumber.replace("BILL-", "").replace("INV-", "");
-  const billStr = `Bill No. : ${billNoClean}`.padStart(24, " ");
+  const billStr = `Bill No: ${billNoClean}`.padStart(24, " ");
   encoder.line(`${ordStr}${billStr}`);
 
   const cashierStr = `Cashier: ${cashierName || "biller"}`.padEnd(24, " ");
   const tokenClean = tokenNumber.replace("KOT-", "").replace("TOKEN-", "");
-  const tokenStr = `Token No.: ${tokenClean}`.padStart(24, " ");
-  encoder.bold(true).line(`${cashierStr}${tokenStr}`);
-  encoder.bold(false);
+  const tokenStr = `Token No: ${tokenClean}`.padStart(24, " ");
+  encoder.line(`${cashierStr}${tokenStr}`);
   encoder.solidLine();
 
-  // 3. Table Header (48 cols: No.Item 26, Qty. 6, Price 8, Amount 8)
-  encoder.bold(true).line("No.Item".padEnd(26, " ") + "Qty.".padStart(6, " ") + "Price".padStart(8, " ") + "Amount".padStart(8, " "));
-  encoder.solidLine();
+  // 3. Table Header (48 cols: Item Name 28, Qty 6, Amount 14)
+  encoder.bold(true).line("Item Name".padEnd(28, " ") + "Qty".padStart(6, " ") + "Amount".padStart(14, " "));
+  encoder.bold(false).solidLine();
 
-  // 4. Items with multi-line word wrapping and column-constrained add-ons
+  // 4. Items Table
   let totalQty = 0;
   let subTotal = 0;
 
@@ -318,53 +311,40 @@ export function buildEscPosBillReceipt(
     const lineTotal = Number(item.total || (item.unitPrice * item.quantity));
     subTotal += lineTotal;
 
-    const numPrefix = `${idx + 1}  `;
-    const wrappedName = wrapWords(item.name, 21);
+    const wrappedName = wrapWords(item.name, 26);
     const qtyStr = item.quantity.toString().padStart(6, " ");
-    const priceStr = item.unitPrice.toFixed(2).padStart(8, " ");
-    const amountStr = lineTotal.toFixed(2).padStart(8, " ");
+    const amountStr = lineTotal.toFixed(2).padStart(14, " ");
 
-    // First line with item name and prices
-    encoder.bold(true).line(`${numPrefix}${wrappedName[0].padEnd(22, " ")}${qtyStr}${priceStr}${amountStr}`);
+    // First line with item name and amount
+    encoder.bold(true).line(`${wrappedName[0].padEnd(28, " ")}${qtyStr}${amountStr}`);
+    encoder.bold(false);
 
-    // Subsequent lines indented under item name only
+    // Subsequent wrapped lines
     for (let i = 1; i < wrappedName.length; i++) {
-      encoder.bold(true).line(`   ${wrappedName[i]}`);
+      encoder.line(`  ${wrappedName[i]}`);
     }
 
-    // Addons strictly indented under item name column (22 cols max so they NEVER touch price/amount columns)
+    // Addons strictly under item name
     if (item.addons && item.addons.length > 0) {
       item.addons.forEach((addon) => {
         const addonName = typeof addon === "string" ? addon : addon.name;
         const addonPrice = typeof addon === "object" && addon.price ? ` (+Rs ${addon.price.toFixed(2)})` : "";
         const fullAddonText = `+ ${addonName}${addonPrice}`;
-        const wrappedAddon = wrapWords(fullAddonText, 22);
-        wrappedAddon.forEach((l) => encoder.bold(false).line(`   ${l}`));
+        const wrappedAddon = wrapWords(fullAddonText, 25);
+        wrappedAddon.forEach((l) => encoder.line(`  ${l}`));
       });
     }
   });
 
   encoder.solidLine();
 
-  // 5. Totals Block (Bold)
-  const totalQtyStr = `Total Qty: ${totalQty}`.padEnd(24, " ");
-  const subTotalStr = `Sub Total  ${subTotal.toFixed(2)}`.padStart(24, " ");
-  encoder.bold(true).line(`${totalQtyStr}${subTotalStr}`);
+  // 5. Grand Total (Prominent, centered, clean standard font)
+  encoder.alignCenter().bold(true).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
+  encoder.bold(false).solidLine();
 
-  if (discountAmount && discountAmount > 0) {
-    const discStr = `Discount  ${discountAmount.toFixed(2)}`.padStart(48, " ");
-    encoder.bold(true).line(discStr);
-  }
-
-  encoder.solidLine();
-
-  // 6. Grand Total (Deep double-height bold)
-  encoder.alignCenter().textSize(1, 2).bold(true).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
-  encoder.textSize(1, 1).bold(false).solidLine();
-
-  // 7. Footer
-  encoder.alignCenter().bold(true).line("Thank You Visit Again");
-  encoder.bold(false).line('"Please wait for 10 minutes after ordering."');
+  // 6. Footer
+  encoder.alignCenter().bold(true).line("Thank You! Please Visit Again");
+  encoder.bold(false).line("Please wait for 10 minutes after ordering.");
   encoder.cut();
 
   return encoder.encode();
