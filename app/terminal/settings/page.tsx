@@ -528,14 +528,53 @@ export default function PosSettingsPage() {
               )}
 
               {desktopPrinters.length === 0 && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Printer Device Model Name</label>
-                  <input
-                    type="text"
-                    value={printerName}
-                    onChange={(e) => setPrinterName(e.target.value)}
-                    className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-800 outline-none focus:border-[#b82e46]"
-                  />
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Printer Device Model Name</label>
+                    <input
+                      type="text"
+                      value={printerName}
+                      onChange={(e) => {
+                        setPrinterName(e.target.value);
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("pos_printer_name", e.target.value);
+                        }
+                      }}
+                      placeholder="e.g. Posiflex HS3inch printer 576 or POS-80"
+                      className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-800 outline-none focus:border-[#b82e46]"
+                    />
+                  </div>
+
+                  {/* Quick Select Buttons */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold text-slate-500 block">Quick Presets (Click to Select):</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        "Posiflex HS3inch printer 576",
+                        "POS-80",
+                        "Thermal Receipt Printer (80mm)",
+                        "Generic / Text Only"
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setPrinterName(preset);
+                            if (typeof window !== "undefined") {
+                              localStorage.setItem("pos_printer_name", preset);
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                            printerName === preset
+                              ? "bg-emerald-100 border-emerald-400 text-emerald-900"
+                              : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
