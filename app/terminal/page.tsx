@@ -115,7 +115,9 @@ export default function PosTerminalPage() {
   // Recent KOTs & Center Addons Modal State
   const [showRecentKotsDrawer, setShowRecentKotsDrawer] = useState(false);
   const [recentKots, setRecentKots] = useState<KotTicket[]>([]);
+  const [allTodayBills, setAllTodayBills] = useState<Bill[]>([]);
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
+  const [selectedPortion, setSelectedPortion] = useState<{ addonId: string; name: string; price: number; groupName?: string } | null>(null);
   const [customizingAddons, setCustomizingAddons] = useState<Array<{ addonId: string; name: string; price: number }>>([]);
   const [customizingQty, setCustomizingQty] = useState(1);
   const [printMode, setPrintMode] = useState<"BOTH" | "KOT_ONLY" | "BILL_ONLY">("BOTH");
@@ -282,17 +284,21 @@ export default function PosTerminalPage() {
 
   async function loadTerminal() {
     try {
-      const [menu, held, digitalOrders, shift, dayStatus] = await Promise.all([
+      const [menu, held, digitalOrders, shift, dayStatus, kotsList, allBillsList] = await Promise.all([
         apiRequest<MenuCategory[]>("/pos-terminal/menu"),
         apiRequest<Bill[]>("/pos-terminal/bills/held"),
         apiRequest<DigitalOrder[]>("/pos-terminal/orders"),
         apiRequest<ShiftSummary>("/pos-terminal/shift-summary"),
         apiRequest<{ active: boolean; businessDay: any }>("/pos-terminal/day/current").catch(() => ({ active: false, businessDay: null })),
+        apiRequest<KotTicket[]>("/pos-terminal/kots").catch(() => []),
+        apiRequest<Bill[]>("/pos-terminal/bills").catch(() => []),
       ]);
       setCategories(menu);
-      setHeldBills(held);
-      setOrders(digitalOrders);
+      setHeldBills(held || []);
+      setOrders(digitalOrders || []);
       setSummary(shift);
+      setRecentKots(kotsList || []);
+      setAllTodayBills(allBillsList || []);
       if (dayStatus) {
         setShiftStatus(dayStatus.active ? "OPEN" : "CLOSED");
       }
@@ -333,7 +339,7 @@ export default function PosTerminalPage() {
   }, [categories, selectedCategory, itemSearch]);
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const activeTotal = activeBill ? Number(activeBill.total) : cartSubtotal;
+  const activeTotal = cartSubtotal;
   const payableTotal = Math.max(activeTotal - Number(discount || 0), 0);
 
   function addItemDirectly(item: MenuItem, addons: MenuAddon[] = []) {
@@ -353,8 +359,27 @@ export default function PosTerminalPage() {
 
   function handleItemClick(item: MenuItem) {
     setCustomizingItem(item);
-    setCustomizingAddons([]);
     setCustomizingQty(1);
+
+    // Look for portion / size / style addon group
+    const portionGroup = item.addonGroups?.find((g) => {
+      const gn = g.name.toLowerCase();
+      return gn.includes("size") || gn.includes("portion") || gn.includes("pack") || gn.includes("style") || gn.includes("type") || gn.includes("falooda");
+    });
+
+    if (portionGroup && portionGroup.addons.length > 0) {
+      const firstPortion = portionGroup.addons[0];
+      setSelectedPortion({
+        addonId: firstPortion.id,
+        name: firstPortion.name,
+        price: Number(firstPortion.price),
+        groupName: portionGroup.name,
+      });
+    } else {
+      setSelectedPortion(null);
+    }
+
+    setCustomizingAddons([]);
   }
 
   const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
@@ -377,6 +402,82 @@ export default function PosTerminalPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function formatCustomizedItemName(
+    baseName: string,
+    portionOption?: { addonId?: string; name: string; price?: number; groupName?: string } | null
+  ): string {
+    if (!portionOption || !portionOption.name) {
+      return baseName.trim();
+    }
+
+    const portionName = portionOption.name.trim();
+    const cleanBase = baseName.trim();
+
+    // If portion is simple size like "Half", "Full", "(Half)", "Small", "300 ML", etc.
+    if (
+      /^(half|full|small|medium|large|regular|1 scoop|2 scoops|\d+\s*ml|\d+\s*gm)/i.test(portionName) ||
+      portionName.startsWith("(") ||
+      (!portionName.toLowerCase().includes("falooda") &&
+        !portionName.toLowerCase().includes("rabdi") &&
+        !portionName.toLowerCase().includes("ice cream") &&
+        !portionName.toLowerCase().includes("kulfi") &&
+        !portionName.toLowerCase().includes("shake"))
+    ) {
+      if (portionName.startsWith("(") && portionName.endsWith(")")) {
+        return `${cleanBase} ${portionName}`;
+      }
+      return `${cleanBase} (${portionName})`;
+    }
+
+    // Common category words like "falooda", "rabdi", "ice cream"
+    const catKeywords = ["falooda", "rabdi", "ice cream", "icecream", "shake", "kulfi", "mastani"];
+    const matchingCat = catKeywords.find(
+      (k) => cleanBase.toLowerCase().includes(k) && portionName.toLowerCase().includes(k)
+    );
+
+    if (matchingCat) {
+      const flavor = cleanBase.replace(new RegExp(matchingCat, "gi"), "").trim();
+      if (flavor && !portionName.toLowerCase().includes(flavor.toLowerCase())) {
+        return `${flavor} ${portionName}`.trim();
+      }
+      return portionName;
+    }
+
+    return `${cleanBase} (${portionName})`;
+  }
+
+  async function handleHoldOrder() {
+    if (!cart.length) {
+      handleClearScreen();
+      return;
+    }
+
+    await runAction(async () => {
+      const body = {
+        items: cart.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+          addons: item.addons,
+        })),
+      };
+      await apiRequest<Bill>("/pos-terminal/bills", {
+        method: "POST",
+        body: {
+          ...body,
+          type: orderType,
+          customerName: customerName || undefined,
+          customerPhone: customerPhone || undefined,
+          customerEmail: customerEmail || undefined,
+          notes: billNote,
+          notePrintEnabled: true,
+          status: "HELD",
+        },
+      });
+      await loadTerminal();
+      handleClearScreen();
+    });
   }
 
   async function triggerThermalPrint(mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY", billData?: Bill | null, kotNumber?: string) {
@@ -403,7 +504,9 @@ export default function PosTerminalPage() {
           addons: Array.isArray(i.addons) ? i.addons.map((a: any) => ({ name: a.name || a.addon?.name || a, price: Number(a.price || 0) })) : [],
         })),
         customerName || billData?.customerName || undefined,
-        customerPhone || billData?.customerPhone || undefined
+        customerPhone || billData?.customerPhone || undefined,
+        billNote || billData?.notes || undefined,
+        customerEmail || billData?.customerEmail || undefined
       );
     }
 
@@ -427,7 +530,9 @@ export default function PosTerminalPage() {
         (context as any)?.user?.name || (context as any)?.billerName || "biller",
         customerName || billData?.customerName || undefined,
         customerPhone || billData?.customerPhone || undefined,
-        Number(discount || billData?.discount || 0)
+        Number(discount || billData?.discount || 0),
+        customerEmail || billData?.customerEmail || undefined,
+        billNote || billData?.notes || undefined
       );
     }
 
@@ -524,8 +629,8 @@ export default function PosTerminalPage() {
       }
 
       await loadTerminal();
-      setMessage(`Bill #${bill.billNumber} saved. Printing KOT & Bill...`);
       await triggerThermalPrint("BOTH", bill);
+      handleClearScreen();
     });
   }
 
@@ -566,8 +671,8 @@ export default function PosTerminalPage() {
       });
 
       await loadTerminal();
-      setMessage(`KOT #${kotResult.kotNumber || 'Generated'} created & printed.`);
       await triggerThermalPrint("KOT_ONLY", bill, kotResult.kotNumber);
+      handleClearScreen();
     });
   }
 
@@ -869,37 +974,46 @@ export default function PosTerminalPage() {
               <span className="hidden md:inline text-[11px] font-bold">Live Orders</span>
             </Link>
 
-            <Link
-              href="/terminal"
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-              title="Store"
-            >
-              <Store className="h-4 w-4 text-slate-500" />
-              <span className="hidden md:inline text-[11px] font-semibold">Store</span>
-            </Link>
-
+            {/* KOTs Navbar Button */}
             <button
               type="button"
-              onClick={() => setShowOrdersModal(true)}
+              onClick={() => void fetchRecentKots()}
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors relative cursor-pointer"
-              title="Orders"
+              title="Today's Kitchen Orders (KOTs)"
             >
-              <ClipboardList className="h-4 w-4 text-slate-500" />
-              <span className="hidden md:inline text-[11px] font-semibold">Orders</span>
-              {orders.length > 0 && (
-                <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#b82e46] text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
-                  {orders.length}
+              <Receipt className="h-4 w-4 text-blue-600" />
+              <span className="hidden md:inline text-[11px] font-semibold">KOTs</span>
+              {recentKots.length > 0 && (
+                <span className="h-4 min-w-[16px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {recentKots.length}
                 </span>
               )}
             </button>
 
+            {/* Today's Bills / Orders Button */}
+            <button
+              type="button"
+              onClick={() => setShowTodayOrdersDrawer(true)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors relative cursor-pointer"
+              title="Today's Orders & Bills"
+            >
+              <ClipboardList className="h-4 w-4 text-emerald-600" />
+              <span className="hidden md:inline text-[11px] font-semibold">Orders</span>
+              {(summary?.finalizedBills ?? 0) > 0 && (
+                <span className="h-4 min-w-[16px] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {summary?.finalizedBills}
+                </span>
+              )}
+            </button>
+
+            {/* Hold Button in Navbar */}
             <button
               type="button"
               onClick={() => setShowHoldModal(true)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors relative cursor-pointer"
-              title="Hold"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-amber-50 text-amber-800 transition-colors relative cursor-pointer"
+              title="Held Bills Queue"
             >
-              <PauseCircle className="h-4 w-4 text-slate-500" />
+              <PauseCircle className="h-4 w-4 text-amber-600" />
               <span className="hidden md:inline text-[11px] font-semibold">Hold</span>
               {heldBills.length > 0 && (
                 <span className="h-4 min-w-[16px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
@@ -925,22 +1039,6 @@ export default function PosTerminalPage() {
           </div>
         </div>
       </header>
-
-      {/* TOAST / ALERT NOTIFICATION */}
-      {(message || error) && (
-        <div className="no-print fixed top-14 right-5 z-50 rounded-xl bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          <span className={error ? "text-rose-400" : "text-emerald-400"}>
-            {error || message}
-          </span>
-          <button
-            type="button"
-            onClick={() => { setError(""); setMessage(""); }}
-            className="text-slate-400 hover:text-white transition cursor-pointer p-0.5 rounded"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* MAIN 3-PANEL WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
@@ -1128,31 +1226,7 @@ export default function PosTerminalPage() {
 
           {/* Cart Body */}
           <div className="flex-1 overflow-y-auto scrollbar-none">
-            {activeBill ? (
-              <div className="p-2.5 sm:p-3 space-y-2">
-                <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-xs shadow-2xs">
-                  <div className="flex items-center justify-between font-bold text-purple-700">
-                    <span>Bill: {activeBill.billNumber}</span>
-                    <span className="uppercase text-[10px] px-2 py-0.5 rounded-full bg-purple-200/80 font-extrabold">{activeBill.status}</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Customer: {activeBill.customerName || "Walk-in"} ({activeBill.customerPhone || "No Phone"})
-                  </div>
-                </div>
-
-                {activeBill.items.map((item) => (
-                  <div key={item.id} className="p-2.5 rounded-xl border border-slate-200 bg-white text-xs space-y-0.5 shadow-2xs">
-                    <div className="flex items-center justify-between font-bold text-slate-800">
-                      <span>{item.name}</span>
-                      <span className="font-mono font-bold text-slate-900">₹{Number(item.total).toFixed(0)}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Qty: {item.quantity} x ₹{Number(item.unitPrice).toFixed(0)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : cart.length === 0 ? (
+            {cart.length === 0 ? (
               /* EMPTY CART WATERMARK */
               <div className="h-full flex flex-col items-center justify-center p-4 sm:p-6 text-center text-slate-400">
                 <div className="h-14 sm:h-16 w-14 sm:w-16 rounded-2xl border border-slate-200/80 flex items-center justify-center mb-2.5 text-slate-400 bg-slate-50/80 shadow-2xs">
@@ -1239,15 +1313,16 @@ export default function PosTerminalPage() {
               </div>
             </div>
 
-            {/* Action Buttons Row (Clear, Save & Print [KOT+Bill], KOT Only, Print Bill) */}
+            {/* Action Buttons Row (Hold, Save & Print [KOT+Bill], KOT Only, Print Bill) */}
             <div className="grid grid-cols-4 gap-1 sm:gap-1.5 pt-0.5">
               <button
                 type="button"
-                onClick={handleClearScreen}
-                className="py-2 px-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] sm:text-[11px] border border-rose-200/80 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs active:scale-[0.98]"
-                title="Clear active screen, cart items, customer details & notes"
+                disabled={busy}
+                onClick={() => void handleHoldOrder()}
+                className="py-2 px-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[10px] sm:text-[11px] border border-amber-200/80 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs active:scale-[0.98]"
+                title="Hold active bill and save to queue"
               >
-                Clear
+                Hold
               </button>
               <button
                 type="button"
@@ -1334,8 +1409,24 @@ export default function PosTerminalPage() {
                   key={b.id}
                   onClick={() => {
                     setActiveBill(b);
+                    setCart(
+                      b.items.map((it: any, idx: number) => ({
+                        localId: `${it.id || idx}-${Date.now()}`,
+                        itemId: it.itemId || it.id,
+                        name: it.name,
+                        quantity: Number(it.quantity || 1),
+                        unitPrice: Number(it.unitPrice || (Number(it.total) / (Number(it.quantity) || 1))),
+                        addons: Array.isArray(it.addons)
+                          ? it.addons.map((a: any) => ({ addonId: a.addonId || a.id, name: a.name, price: Number(a.price || 0) }))
+                          : [],
+                      }))
+                    );
+                    setCustomerName(b.customerName || "");
+                    setCustomerPhone(b.customerPhone || "");
+                    setCustomerEmail(b.customerEmail || "");
+                    setBillNote(b.notes || "");
+                    setDiscount(String(b.discount || 0));
                     setShowHoldModal(false);
-                    setMessage(`Loaded held bill ${b.billNumber}`);
                   }}
                   className="p-3 rounded-lg border border-slate-200 hover:border-[#b82e46] bg-slate-50 hover:bg-white cursor-pointer transition shadow-2xs flex items-center justify-between"
                 >
@@ -1650,9 +1741,9 @@ export default function PosTerminalPage() {
               </button>
             </div>
 
-            <div className="flex-1 space-y-2 overflow-y-auto scrollbar-none pr-1">
-              {heldBills.concat(activeBill ? [activeBill] : []).map((b) => (
-                <div key={b.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-1.5 shadow-2xs">
+            <div className="flex-1 space-y-2.5 overflow-y-auto scrollbar-none pr-1">
+              {(allTodayBills.length > 0 ? allTodayBills : heldBills).map((b) => (
+                <div key={b.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-slate-900">{b.billNumber}</span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${b.status === "FINALIZED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
@@ -1660,15 +1751,35 @@ export default function PosTerminalPage() {
                     </span>
                   </div>
                   <div className="text-xs text-slate-600 flex justify-between">
-                    <span>Customer: {b.customerName || "Walk-in"}</span>
+                    <span>Customer: {b.customerName || "Walk-in"} {b.customerPhone ? `(${b.customerPhone})` : ""}</span>
                     <span className="font-mono font-bold text-emerald-700">₹{Number(b.total).toFixed(0)}</span>
                   </div>
+                  {b.items && b.items.length > 0 && (
+                    <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/70 space-y-0.5">
+                      {b.items.map((it: any, idx: number) => (
+                        <div key={idx} className="flex justify-between">
+                          <span>{it.quantity}x {it.name}</span>
+                          <span className="font-mono">₹{Number(it.total || (Number(it.unitPrice || 0) * Number(it.quantity || 1))).toFixed(0)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {b.notes && (
+                    <div className="text-[10px] text-amber-700 bg-amber-50/80 px-2 py-1 rounded border border-amber-200">
+                      Note: {b.notes}
+                    </div>
+                  )}
                   <div className="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-200">
                     <span>Type: {b.orderType}</span>
                     <span>{new Date(b.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               ))}
+              {allTodayBills.length === 0 && heldBills.length === 0 && (
+                <div className="p-8 text-center text-xs text-slate-400 font-medium">
+                  No orders generated today yet.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2157,121 +2268,168 @@ export default function PosTerminalPage() {
       )}
 
       {/* CENTER ADD-ONS SELECTION MODAL POPUP */}
-      {customizingItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-[#b82e46] tracking-wider">Item Customization</span>
-                <h3 className="text-base font-bold text-slate-900">{customizingItem.name}</h3>
-                <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 mt-1 inline-block">
-                  Price: ₹{Number(customizingItem.price).toFixed(0)}
-                </span>
-              </div>
-              <button type="button" onClick={() => setCustomizingItem(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {customizingItem && (() => {
+        const portionGroups = (customizingItem.addonGroups || []).filter((g) => {
+          const gn = g.name.toLowerCase();
+          return gn.includes("size") || gn.includes("portion") || gn.includes("pack") || gn.includes("style") || gn.includes("type") || gn.includes("falooda");
+        });
+        const toppingGroups = (customizingItem.addonGroups || []).filter((g) => {
+          const gn = g.name.toLowerCase();
+          return !gn.includes("size") && !gn.includes("portion") && !gn.includes("pack") && !gn.includes("style") && !gn.includes("type") && !gn.includes("falooda");
+        });
 
-            {Array.from(
-              new Map(
-                (customizingItem.addonGroups || [])
-                  .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
-                  .map((a) => [a.id, a])
-              ).values()
-            ).length > 0 ? (
-              <>
-                <p className="text-xs text-slate-500 font-medium">Select toppings to add to your loaded cup:</p>
-                <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-none pr-1">
-                  {Array.from(
-                    new Map(
-                      (customizingItem.addonGroups || [])
-                        .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
-                        .map((a) => [a.id, a])
-                    ).values()
-                  ).map((addon) => {
-                    const isChecked = customizingAddons.some((a) => a.addonId === addon.id);
-                    return (
-                      <label
-                        key={addon.id}
-                        className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${isChecked ? "bg-emerald-50/80 border-emerald-500 text-slate-900 shadow-2xs" : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-white"}`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setCustomizingAddons([...customizingAddons, { addonId: addon.id, name: addon.name, price: Number(addon.price) }]);
-                              } else {
-                                setCustomizingAddons(customizingAddons.filter((a) => a.addonId !== addon.id));
-                              }
-                            }}
-                            className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
-                          />
-                          <div>
-                            <span className="font-bold text-slate-800 block">{addon.name}</span>
-                            <span className="text-[10px] text-slate-400 block">{addon.groupName}</span>
-                          </div>
-                        </div>
-                        <span className="font-mono font-bold text-emerald-700">+₹{Number(addon.price)}</span>
-                      </label>
-                    );
-                  })}
+        const portionAddons = portionGroups.flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })));
+        const toppingAddons = toppingGroups.flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })));
+
+        const basePrice = selectedPortion ? Number(selectedPortion.price) : Number(customizingItem.price);
+        const toppingTotal = customizingAddons.reduce((sum, a) => sum + a.price, 0);
+        const unitPrice = basePrice + toppingTotal;
+        const lineTotal = unitPrice * customizingQty;
+        const displayName = formatCustomizedItemName(customizingItem.name, selectedPortion);
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-[#b82e46] tracking-wider">Customize Item</span>
+                  <h3 className="text-base font-bold text-slate-900 leading-snug">{displayName}</h3>
+                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 mt-1 inline-block">
+                    Price: ₹{unitPrice.toFixed(0)}
+                  </span>
                 </div>
-              </>
-            ) : (
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-medium">
-                Standard item with no additional toppings. Set quantity below and add to bill.
-              </div>
-            )}
-
-            {/* Qty & Add to Cart */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setCustomizingQty(Math.max(1, customizingQty - 1))}
-                  className="h-7 w-7 bg-white rounded-lg font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs shadow-2xs cursor-pointer active:scale-95"
-                >
-                  -
-                </button>
-                <span className="w-5 text-center font-bold text-xs text-slate-800">{customizingQty}</span>
-                <button
-                  type="button"
-                  onClick={() => setCustomizingQty(customizingQty + 1)}
-                  className="h-7 w-7 bg-white rounded-lg font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs shadow-2xs cursor-pointer active:scale-95"
-                >
-                  +
+                <button type="button" onClick={() => setCustomizingItem(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  const addonTotal = customizingAddons.reduce((sum, a) => sum + a.price, 0);
-                  const unitPrice = Number(customizingItem.price) + addonTotal;
-                  setCart((current) => [
-                    ...current,
-                    {
-                      localId: `${customizingItem.id}-${Date.now()}-${current.length}`,
-                      itemId: customizingItem.id,
-                      name: customizingItem.name,
-                      quantity: customizingQty,
-                      addons: customizingAddons,
-                      unitPrice,
-                    },
-                  ]);
-                  setCustomizingItem(null);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98]"
-              >
-                Add to Cart (₹{((Number(customizingItem.price) + customizingAddons.reduce((sum, a) => sum + a.price, 0)) * customizingQty).toFixed(0)})
-              </button>
+              {/* Portion / Size Selection (Single-Choice Radio) */}
+              {portionAddons.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-slate-700 block">Select Portion / Size:</span>
+                  <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto scrollbar-none pr-1">
+                    {portionAddons.map((addon) => {
+                      const isSelected = selectedPortion?.addonId === addon.id;
+                      return (
+                        <label
+                          key={addon.id}
+                          onClick={() => setSelectedPortion({ addonId: addon.id, name: addon.name, price: Number(addon.price), groupName: addon.groupName })}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${
+                            isSelected ? "bg-rose-50/80 border-[#b82e46] text-[#991b32] font-bold shadow-2xs" : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="radio"
+                              name="portionSelection"
+                              checked={isSelected}
+                              onChange={() => setSelectedPortion({ addonId: addon.id, name: addon.name, price: Number(addon.price), groupName: addon.groupName })}
+                              className="h-4 w-4 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
+                            />
+                            <div>
+                              <span className="text-xs block">{addon.name}</span>
+                              <span className="text-[10px] text-slate-400 block font-normal">{addon.groupName}</span>
+                            </div>
+                          </div>
+                          <span className="font-mono font-bold text-slate-900">₹{Number(addon.price).toFixed(0)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Addons / Toppings (Multi-Choice Checkboxes) */}
+              {toppingAddons.length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-slate-100">
+                  <span className="text-xs font-bold text-slate-700 block">Add Extra Toppings:</span>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-none pr-1">
+                    {toppingAddons.map((addon) => {
+                      const isChecked = customizingAddons.some((a) => a.addonId === addon.id);
+                      return (
+                        <label
+                          key={addon.id}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${
+                            isChecked ? "bg-emerald-50/80 border-emerald-500 text-slate-900 shadow-2xs" : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCustomizingAddons([...customizingAddons, { addonId: addon.id, name: addon.name, price: Number(addon.price) }]);
+                                } else {
+                                  setCustomizingAddons(customizingAddons.filter((a) => a.addonId !== addon.id));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
+                            />
+                            <div>
+                              <span className="font-bold text-slate-800 block">{addon.name}</span>
+                              <span className="text-[10px] text-slate-400 block">{addon.groupName}</span>
+                            </div>
+                          </div>
+                          <span className="font-mono font-bold text-emerald-700">+₹{Number(addon.price).toFixed(0)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {portionAddons.length === 0 && toppingAddons.length === 0 && (
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-medium">
+                  Standard item with no additional toppings. Set quantity below and add to bill.
+                </div>
+              )}
+
+              {/* Qty & Add to Cart */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setCustomizingQty(Math.max(1, customizingQty - 1))}
+                    className="h-7 w-7 bg-white rounded-lg font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs shadow-2xs cursor-pointer active:scale-95"
+                  >
+                    -
+                  </button>
+                  <span className="w-5 text-center font-bold text-xs text-slate-800">{customizingQty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomizingQty(customizingQty + 1)}
+                    className="h-7 w-7 bg-white rounded-lg font-bold text-slate-700 flex items-center justify-center hover:bg-slate-200 text-xs shadow-2xs cursor-pointer active:scale-95"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCart((current) => [
+                      ...current,
+                      {
+                        localId: `${customizingItem.id}-${Date.now()}-${current.length}`,
+                        itemId: customizingItem.id,
+                        name: displayName,
+                        quantity: customizingQty,
+                        addons: customizingAddons,
+                        unitPrice,
+                      },
+                    ]);
+                    setCustomizingItem(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98]"
+                >
+                  Add to Cart (₹{lineTotal.toFixed(0)})
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 80MM THERMAL RECEIPT PRINT CONTAINER (HIDDEN ON SCREEN, VISIBLE ON PRINT) */}
       {mounted && typeof document !== "undefined"

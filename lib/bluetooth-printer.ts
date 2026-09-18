@@ -181,7 +181,9 @@ export function buildEscPosKotReceipt(
   orderType: string,
   items: Array<{ name: string; quantity: number; notes?: string; addons?: Array<{ name: string; price?: number }> }>,
   customerName?: string,
-  customerPhone?: string
+  customerPhone?: string,
+  billNote?: string,
+  customerEmail?: string
 ): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.init();
@@ -194,16 +196,21 @@ export function buildEscPosKotReceipt(
   encoder.line(`Order: ${ordTypeLabel}`);
   encoder.bold(false);
 
-  if (customerName || customerPhone) {
+  if (customerName || customerPhone || customerEmail) {
     encoder.alignLeft();
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
-    encoder.bold(true).line(`${cust}${ph}`).bold(false);
+    if (cust || ph) encoder.bold(true).line(`${cust}${ph}`).bold(false);
+    if (customerEmail) encoder.line(`Email: ${customerEmail}`);
+  }
+
+  if (billNote) {
+    encoder.alignLeft().bold(true).line(`Note: ${billNote}`).bold(false);
   }
 
   encoder.alignLeft().solidLine();
 
-  // Table Header (48 cols: Item Name 30, Qty 8, Special Note 10)
+  // Table Header (48 cols: Item Name 28, Note 14, Qty 6)
   encoder.bold(true).line("No. Item Name".padEnd(28, " ") + "Special Note".padEnd(14, " ") + "Qty".padStart(6, " "));
   encoder.bold(false).solidLine();
 
@@ -254,7 +261,9 @@ export function buildEscPosBillReceipt(
   cashierName?: string,
   customerName?: string,
   customerPhone?: string,
-  discountAmount?: number
+  discountAmount?: number,
+  customerEmail?: string,
+  billNote?: string
 ): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.init();
@@ -274,10 +283,11 @@ export function buildEscPosBillReceipt(
 
   // 2. Info Block (48 cols)
   encoder.alignLeft();
-  if (customerName || customerPhone) {
+  if (customerName || customerPhone || customerEmail) {
     const cust = customerName ? `Customer: ${customerName}` : "";
     const ph = customerPhone ? ` (${customerPhone})` : "";
-    encoder.bold(true).line(`${cust}${ph}`).bold(false);
+    if (cust || ph) encoder.bold(true).line(`${cust}${ph}`).bold(false);
+    if (customerEmail) encoder.line(`Email: ${customerEmail}`);
   }
 
   const now = new Date();
@@ -295,6 +305,11 @@ export function buildEscPosBillReceipt(
   const tokenStr = `Token No: ${tokenClean}`.padEnd(24, " ");
   const cashierStr = `Cashier: ${cashierName || "biller"}`.padStart(24, " ");
   encoder.bold(true).line(`${tokenStr}${cashierStr}`).bold(false);
+
+  if (billNote) {
+    encoder.bold(true).line(`Note: ${billNote}`).bold(false);
+  }
+
   encoder.solidLine();
 
   // 3. Table Header (48 cols: Item Name 28, Qty 6, Amount 14)
@@ -337,11 +352,19 @@ export function buildEscPosBillReceipt(
 
   encoder.solidLine();
 
-  // 5. Grand Total (Prominent, centered, clean standard font)
-  encoder.alignCenter().bold(true).line(`Grand Total: Rs ${totalAmount.toFixed(2)}`);
+  // 5. Totals & Discount Breakdown
+  const disc = Number(discountAmount || 0);
+  encoder.line(`Total Qty: ${totalQty}`.padEnd(24, " ") + `Sub Total: Rs ${subTotal.toFixed(2)}`.padStart(24, " "));
+  if (disc > 0) {
+    encoder.line("".padEnd(24, " ") + `Discount: -Rs ${disc.toFixed(2)}`.padStart(24, " "));
+  }
+  encoder.solidLine();
+
+  // 6. Grand Total (Prominent, centered, clean standard font)
+  encoder.alignCenter().bold(true).line(`Grand Total: Rs ${Number(totalAmount).toFixed(2)}`);
   encoder.bold(false).solidLine();
 
-  // 6. Footer
+  // 7. Footer
   encoder.alignCenter().bold(true).line("Thank You! Please Visit Again");
   encoder.bold(false).line("Please wait for 10 minutes after ordering.");
   encoder.cut();
