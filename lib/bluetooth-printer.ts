@@ -285,16 +285,16 @@ export function buildEscPosBillReceipt(
   const timeStr = `Time: ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`.padStart(24, " ");
   encoder.line(`${dateStr}${timeStr}`);
 
-  const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
-  const ordStr = `Order: ${ordTypeLabel}`.padEnd(24, " ");
   const billNoClean = billNumber.replace("BILL-", "").replace("INV-", "");
-  const billStr = `Bill No: ${billNoClean}`.padStart(24, " ");
-  encoder.bold(true).line(`${ordStr}${billStr}`).bold(false);
+  const billStr = `Bill No: ${billNoClean}`.padEnd(24, " ");
+  const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
+  const ordStr = `Order: ${ordTypeLabel}`.padStart(24, " ");
+  encoder.bold(true).line(`${billStr}${ordStr}`).bold(false);
 
-  const cashierStr = `Cashier: ${cashierName || "biller"}`.padEnd(24, " ");
   const tokenClean = tokenNumber.replace("KOT-", "").replace("TOKEN-", "");
-  const tokenStr = `Token No: ${tokenClean}`.padStart(24, " ");
-  encoder.bold(true).line(`${cashierStr}${tokenStr}`).bold(false);
+  const tokenStr = `Token No: ${tokenClean}`.padEnd(24, " ");
+  const cashierStr = `Cashier: ${cashierName || "biller"}`.padStart(24, " ");
+  encoder.bold(true).line(`${tokenStr}${cashierStr}`).bold(false);
   encoder.solidLine();
 
   // 3. Table Header (48 cols: Item Name 28, Qty 6, Amount 14)

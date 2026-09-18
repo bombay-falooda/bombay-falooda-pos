@@ -352,21 +352,9 @@ export default function PosTerminalPage() {
   }
 
   function handleItemClick(item: MenuItem) {
-    const uniqueAddons = Array.from(
-      new Map(
-        (item.addonGroups || [])
-          .flatMap((g) => g.addons)
-          .map((a) => [a.id, a])
-      ).values()
-    );
-
-    if (uniqueAddons.length > 0) {
-      setCustomizingItem(item);
-      setCustomizingAddons([]);
-      setCustomizingQty(1);
-    } else {
-      addItemDirectly(item, []);
-    }
+    setCustomizingItem(item);
+    setCustomizingAddons([]);
+    setCustomizingQty(1);
   }
 
   const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
@@ -1037,7 +1025,7 @@ export default function PosTerminalPage() {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`relative min-h-[90px] sm:min-h-[96px] p-2.5 sm:p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
+                      className={`relative min-h-[72px] sm:min-h-[78px] p-2.5 sm:p-3 rounded-xl bg-white border text-left flex flex-col justify-between transition-all duration-150 border-l-[3.5px] border-l-emerald-500 cursor-pointer group active:scale-[0.99] ${
                         inCartCount > 0
                           ? "border-2 border-[#b82e46]/60 bg-rose-50/30 shadow-xs"
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-md"
@@ -1064,20 +1052,14 @@ export default function PosTerminalPage() {
                         )}
                       </div>
 
-                      {/* Bottom Price Footer */}
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between shrink-0 mt-1">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-xs sm:text-sm font-black text-slate-900">
-                            ₹{Number(item.price).toFixed(0)}
-                          </span>
-                        </div>
-
-                        {inCartCount > 0 && (
+                      {/* In-cart counter badge if item added */}
+                      {inCartCount > 0 && (
+                        <div className="flex justify-end pt-1">
                           <span className="h-4.5 px-2 rounded-md bg-[#b82e46] text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
                             x{inCartCount}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -2180,53 +2162,69 @@ export default function PosTerminalPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-[10px] font-black uppercase text-[#b82e46] tracking-wider">Customize Toppings</span>
+                <span className="text-[10px] font-black uppercase text-[#b82e46] tracking-wider">Item Customization</span>
                 <h3 className="text-base font-bold text-slate-900">{customizingItem.name}</h3>
+                <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 mt-1 inline-block">
+                  Price: ₹{Number(customizingItem.price).toFixed(0)}
+                </span>
               </div>
               <button type="button" onClick={() => setCustomizingItem(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 font-medium">Select toppings to add to your loaded cup:</p>
-
-            <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-none pr-1">
-              {Array.from(
-                new Map(
-                  (customizingItem.addonGroups || [])
-                    .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
-                    .map((a) => [a.id, a])
-                ).values()
-              ).map((addon) => {
-                const isChecked = customizingAddons.some((a) => a.addonId === addon.id);
-                return (
-                  <label
-                    key={addon.id}
-                    className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${isChecked ? "bg-emerald-50/80 border-emerald-500 text-slate-900 shadow-2xs" : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-white"}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setCustomizingAddons([...customizingAddons, { addonId: addon.id, name: addon.name, price: Number(addon.price) }]);
-                          } else {
-                            setCustomizingAddons(customizingAddons.filter((a) => a.addonId !== addon.id));
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-800 block">{addon.name}</span>
-                        <span className="text-[10px] text-slate-400 block">{addon.groupName}</span>
-                      </div>
-                    </div>
-                    <span className="font-mono font-bold text-emerald-700">+₹{Number(addon.price)}</span>
-                  </label>
-                );
-              })}
-            </div>
+            {Array.from(
+              new Map(
+                (customizingItem.addonGroups || [])
+                  .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
+                  .map((a) => [a.id, a])
+              ).values()
+            ).length > 0 ? (
+              <>
+                <p className="text-xs text-slate-500 font-medium">Select toppings to add to your loaded cup:</p>
+                <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-none pr-1">
+                  {Array.from(
+                    new Map(
+                      (customizingItem.addonGroups || [])
+                        .flatMap((g) => g.addons.map((a) => ({ ...a, groupName: g.name })))
+                        .map((a) => [a.id, a])
+                    ).values()
+                  ).map((addon) => {
+                    const isChecked = customizingAddons.some((a) => a.addonId === addon.id);
+                    return (
+                      <label
+                        key={addon.id}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer text-xs ${isChecked ? "bg-emerald-50/80 border-emerald-500 text-slate-900 shadow-2xs" : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-white"}`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCustomizingAddons([...customizingAddons, { addonId: addon.id, name: addon.name, price: Number(addon.price) }]);
+                              } else {
+                                setCustomizingAddons(customizingAddons.filter((a) => a.addonId !== addon.id));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-[#b82e46] focus:ring-0 cursor-pointer accent-[#b82e46]"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 block">{addon.name}</span>
+                            <span className="text-[10px] text-slate-400 block">{addon.groupName}</span>
+                          </div>
+                        </div>
+                        <span className="font-mono font-bold text-emerald-700">+₹{Number(addon.price)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-medium">
+                Standard item with no additional toppings. Set quantity below and add to bill.
+              </div>
+            )}
 
             {/* Qty & Add to Cart */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
@@ -2374,21 +2372,23 @@ export default function PosTerminalPage() {
                     )}
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ fontWeight: "400" }}>Date: {new Date().toLocaleDateString("en-GB")}</span>
+                      <span style={{ fontWeight: "400" }}>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontWeight: "700" }}>
+                        Bill No.: {activeBill?.billNumber ? activeBill.billNumber.replace("BILL-", "") : "51851"}
+                      </span>
                       <span style={{ fontWeight: "700" }}>
                         {orderType === "DINE_IN" ? "Dine In" : orderType === "DELIVERY" ? "Delivery" : "Pick Up"}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: "400" }}>{new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ fontWeight: "400" }}>
-                        Bill No.: {activeBill?.billNumber ? activeBill.billNumber.replace("BILL-", "") : "51851"}
+                      <span style={{ fontWeight: "700" }}>
+                        Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "8"}
                       </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: "400" }}>Cashier: {activeBill?.order ? "Autoaccept" : ((context as any)?.device?.name || "biller")}</span>
-                    </div>
-                    <div style={{ fontWeight: "700", marginTop: "1px" }}>
-                      Token No.: {activeBill?.kotTickets?.[0]?.kotNumber ? activeBill.kotTickets[0].kotNumber.replace("KOT-", "") : "8"}
+                      <span style={{ fontWeight: "400" }}>
+                        Cashier: {activeBill?.order ? "Autoaccept" : ((context as any)?.device?.name || "biller")}
+                      </span>
                     </div>
                   </div>
 
