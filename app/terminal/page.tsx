@@ -162,6 +162,8 @@ export default function PosTerminalPage() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
+  const [showDeliveryDrawer, setShowDeliveryDrawer] = useState(false);
+  const [deliveryFilter, setDeliveryFilter] = useState<"ALL" | "ONGOING" | "ADVANCE" | "COMPLETED">("ALL");
 
   // Shift Day State
   const [openingFloat, setOpeningFloat] = useState("500");
@@ -1021,6 +1023,94 @@ export default function PosTerminalPage() {
     });
   }
 
+  const allDeliveryOrders = useMemo(() => {
+    const onlineList = (orders || [])
+      .filter((o) => o.type === "DELIVERY" || o.source === "WEBSITE")
+      .map((o) => ({
+        id: o.id,
+        referenceNo: o.id.slice(-6).toUpperCase(),
+        source: o.source || "WEBSITE",
+        isOnline: true,
+        type: o.type || "DELIVERY",
+        customerName: o.customerName || "Online Customer",
+        customerPhone: o.customerPhone || "9876543210",
+        deliveryAddress: (o as any).deliveryAddress || "Home Delivery Address",
+        total: Number(o.total || 0),
+        status: (o as any).deliveryStatus || o.status || "PREPARING",
+        isAdvance: Boolean(o.notes?.toLowerCase().includes("advance") || o.notes?.toLowerCase().includes("scheduled")),
+        scheduledTime: o.notes?.match(/([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM)?)/i)?.[1] || null,
+        driverName: (o as any).driverName || "Sahir Qureshi",
+        driverPhone: (o as any).driverPhone || "9876543210",
+        paymentType: (o as any).deliveryStatus === "PAID" ? "PAID" : "COD",
+        items: o.items || [],
+        createdAt: o.createdAt,
+      }));
+
+    const posList = (allTodayBills || [])
+      .filter((b) => (b as any).orderType === "DELIVERY" || (b as any).type === "DELIVERY" || b.notes?.includes("[Delivery:"))
+      .map((b) => {
+        const addressMatch = b.notes?.match(/\[Delivery:\s*([^\]]+)\]/);
+        const extractedAddress = addressMatch ? addressMatch[1] : (b as any).deliveryAddress || "Local Delivery Area";
+        const isAdvance = Boolean(b.notes?.toLowerCase().includes("advance") || b.notes?.toLowerCase().includes("scheduled"));
+        return {
+          id: b.id,
+          referenceNo: b.billNumber.replace("BILL-", ""),
+          source: "POS",
+          isOnline: false,
+          type: "DELIVERY",
+          customerName: b.customerName || "Counter Customer",
+          customerPhone: b.customerPhone || "9876543210",
+          deliveryAddress: extractedAddress,
+          total: Number(b.total || 0),
+          status: (b as any).deliveryStatus || (b.status === "FINALIZED" ? "OUT_FOR_DELIVERY" : "PREPARING"),
+          isAdvance,
+          scheduledTime: b.notes?.match(/([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM)?)/i)?.[1] || null,
+          driverName: (b as any).driverName || "Sahir Qureshi",
+          driverPhone: (b as any).driverPhone || "9876543210",
+          paymentType: (b.payments && b.payments.length > 0) ? "PAID" : "COD",
+          items: b.items || [],
+          createdAt: b.createdAt,
+        };
+      });
+
+    return [...onlineList, ...posList];
+  }, [orders, allTodayBills]);
+
+  const ongoingDeliveries = useMemo(() => {
+    return allDeliveryOrders.filter((d) => d.status !== "DELIVERED" && d.status !== "COMPLETED" && d.status !== "CANCELLED");
+  }, [allDeliveryOrders]);
+
+  const advanceDeliveries = useMemo(() => {
+    return allDeliveryOrders.filter((d) => d.isAdvance);
+  }, [allDeliveryOrders]);
+
+  const completedDeliveries = useMemo(() => {
+    return allDeliveryOrders.filter((d) => d.status === "DELIVERED" || d.status === "COMPLETED");
+  }, [allDeliveryOrders]);
+
+  const filteredDeliveries = useMemo(() => {
+    if (deliveryFilter === "ONGOING") return ongoingDeliveries;
+    if (deliveryFilter === "ADVANCE") return advanceDeliveries;
+    if (deliveryFilter === "COMPLETED") return completedDeliveries;
+    return allDeliveryOrders;
+  }, [deliveryFilter, allDeliveryOrders, ongoingDeliveries, advanceDeliveries, completedDeliveries]);
+
+  async function handleUpdateDeliveryOrderStatus(orderId: string, status: string) {
+    try {
+      setBusy(true);
+      await apiRequest(`/pos-terminal/delivery-orders/${orderId}/status`, {
+        method: "PATCH",
+        body: { deliveryStatus: status },
+      });
+      setMessage(`Delivery status updated to ${status.replace(/_/g, " ")}`);
+      await loadTerminal();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update delivery status");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function logout() {
     clearPosSession();
     router.replace("/login");
@@ -1181,6 +1271,22 @@ export default function PosTerminalPage() {
               {heldBills.length > 0 && (
                 <span className="h-4 min-w-[16px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
                   {heldBills.length}
+                </span>
+              )}
+            </button>
+
+            {/* Delivery Button in Navbar */}
+            <button
+              type="button"
+              onClick={() => setShowDeliveryDrawer(true)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-amber-50 text-amber-900 transition-colors relative cursor-pointer font-medium"
+              title="Current & Advance Delivery Orders"
+            >
+              <Bike className="h-4 w-4 text-amber-600" />
+              <span className="hidden md:inline text-[11px] font-bold">Delivery</span>
+              {ongoingDeliveries.length > 0 && (
+                <span className="h-4 min-w-[16px] px-1 rounded-full bg-amber-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-pulse">
+                  {ongoingDeliveries.length}
                 </span>
               )}
             </button>
@@ -2116,6 +2222,213 @@ export default function PosTerminalPage() {
               >
                 ✓ Done & Start Next Order
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELIVERY ORDERS MANAGEMENT RIGHT-SIDE DRAWER */}
+      {showDeliveryDrawer && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
+          <div className="bg-white h-full w-[520px] max-w-full p-4 sm:p-5 space-y-3 shadow-2xl border-l border-slate-200 flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs">
+                  🛵
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800">Delivery Orders & Dispatch ({filteredDeliveries.length})</h3>
+                  <p className="text-[11px] text-slate-500">Website online orders & in-store counter deliveries</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeliveryDrawer(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="grid grid-cols-4 bg-slate-100 p-1 rounded-xl gap-1 shrink-0 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setDeliveryFilter("ALL")}
+                className={`py-1.5 rounded-lg transition-all ${deliveryFilter === "ALL" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                All ({allDeliveryOrders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryFilter("ONGOING")}
+                className={`py-1.5 rounded-lg transition-all ${deliveryFilter === "ONGOING" ? "bg-white text-amber-700 shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                Ongoing ({ongoingDeliveries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryFilter("ADVANCE")}
+                className={`py-1.5 rounded-lg transition-all ${deliveryFilter === "ADVANCE" ? "bg-white text-indigo-700 shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                Advance ({advanceDeliveries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryFilter("COMPLETED")}
+                className={`py-1.5 rounded-lg transition-all ${deliveryFilter === "COMPLETED" ? "bg-white text-emerald-700 shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                Done ({completedDeliveries.length})
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 space-y-3 overflow-y-auto scrollbar-none pr-1">
+              {filteredDeliveries.map((d) => (
+                <div key={d.id} className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-white hover:border-amber-400 transition-all shadow-2xs space-y-2.5">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${d.source === "WEBSITE" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
+                        {d.source === "WEBSITE" ? "🌐 Website" : "🏪 POS In-Store"}
+                      </span>
+                      <span className="font-mono font-bold text-xs text-slate-800">#{d.referenceNo}</span>
+                      {d.isAdvance && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold text-[9px]">
+                          📅 Advance {d.scheduledTime ? `(${d.scheduledTime})` : ""}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                      d.status === "DELIVERED"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : d.status === "OUT_FOR_DELIVERY"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}>
+                      {d.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+
+                  {/* Customer Info */}
+                  <div className="flex items-center justify-between border-t border-slate-200/80 pt-2 text-xs">
+                    <div>
+                      <div className="font-bold text-slate-900">{d.customerName}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">{d.customerPhone}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={`tel:${d.customerPhone}`}
+                        className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200"
+                      >
+                        📞 Call
+                      </a>
+                      <a
+                        href={`https://wa.me/91${d.customerPhone.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-800 font-bold text-[10px] border border-green-200"
+                      >
+                        💬 WhatsApp
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                    <div className="text-[11px] text-slate-700 font-medium">📍 {d.deliveryAddress}</div>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d.deliveryAddress)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 pt-0.5"
+                    >
+                      🗺️ Open Google Maps GPS Route ↗
+                    </a>
+                  </div>
+
+                  {/* Items & Amount */}
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/80">
+                    <span className="text-slate-500 text-[11px]">
+                      {d.items.length} items • Rider: <strong className="text-slate-800">{d.driverName}</strong>
+                    </span>
+                    <span className="font-mono font-bold text-emerald-700">₹{d.total} ({d.paymentType})</span>
+                  </div>
+
+                  {/* Quick Share Links & Live Controls */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `http://localhost:3003/track/${d.id}`;
+                        navigator.clipboard.writeText(url);
+                        setMessage("Customer tracking link copied!");
+                      }}
+                      className="py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      👤 Copy Customer Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `http://localhost:3003/delivery-nav/${d.id}`;
+                        navigator.clipboard.writeText(url);
+                        setMessage("Rider navigation link copied!");
+                      }}
+                      className="py-1.5 px-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      🛵 Copy Rider Route Link
+                    </button>
+                  </div>
+
+                  {/* Live Status Control Buttons */}
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      disabled={busy || d.status === "ON_THE_WAY"}
+                      onClick={() => void handleUpdateDeliveryOrderStatus(d.id, "ON_THE_WAY")}
+                      className={`py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                        d.status === "ON_THE_WAY"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      On The Way
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || d.status === "OUT_FOR_DELIVERY"}
+                      onClick={() => void handleUpdateDeliveryOrderStatus(d.id, "OUT_FOR_DELIVERY")}
+                      className={`py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                        d.status === "OUT_FOR_DELIVERY"
+                          ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Out For Delivery
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || d.status === "DELIVERED"}
+                      onClick={() => void handleUpdateDeliveryOrderStatus(d.id, "DELIVERED")}
+                      className={`py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                        d.status === "DELIVERED"
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Delivered ✓
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {filteredDeliveries.length === 0 && (
+                <div className="p-12 text-center text-xs text-slate-400 font-semibold space-y-1">
+                  <div className="text-2xl">🛵</div>
+                  <div>No delivery orders in this category.</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
