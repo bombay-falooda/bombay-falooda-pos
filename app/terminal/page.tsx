@@ -37,6 +37,14 @@ import {
   Radio,
   Settings,
   Bluetooth,
+  Phone,
+  MapPin,
+  Copy,
+  ExternalLink,
+  Clock,
+  Send,
+  Navigation,
+  Globe,
 } from "lucide-react";
 
 import { ThermalBillReceipt, money } from "@/components/pos-ui";
@@ -1952,8 +1960,9 @@ export default function PosTerminalPage() {
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50/60 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition"
                 />
-                <p className="text-[10.5px] text-slate-500">
-                  📍 Tip: Paste full text address or customer WhatsApp Google Maps share link for turn-by-turn navigation.
+                <p className="text-[10.5px] text-slate-500 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                  <span>Tip: Paste full text address or customer WhatsApp Google Maps share link for turn-by-turn navigation.</span>
                 </p>
               </div>
 
@@ -2063,7 +2072,8 @@ export default function PosTerminalPage() {
                 onClick={() => void executeFinalizeAndPrint(pendingPrintMode)}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                <span>🚀 Dispatch Delivery & Print Bill</span>
+                <Printer className="h-4 w-4" />
+                <span>Dispatch Delivery & Print Bill</span>
               </button>
             </div>
           </div>
@@ -2078,10 +2088,10 @@ export default function PosTerminalPage() {
             <div className="p-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0 shadow-md">
               <div className="flex items-center gap-2.5">
                 <div className="h-9 w-9 rounded-xl bg-white text-emerald-700 font-black text-base flex items-center justify-center shadow-md">
-                  ✓
+                  <Check className="h-5 w-5 text-emerald-700 stroke-[3]" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-tight">Delivery Order Dispatched!</h3>
+                  <h3 className="font-bold text-sm text-white leading-tight">Delivery Order Dispatched</h3>
                   <p className="text-[11px] text-emerald-100 font-mono">Bill #{dispatchedDeliveryData.billNumber.replace("BILL-", "")} • Total: ₹{dispatchedDeliveryData.total}</p>
                 </div>
               </div>
@@ -2111,8 +2121,9 @@ export default function PosTerminalPage() {
                     {dispatchedDeliveryData.paymentType === "PAID" ? "PREPAID (ALREADY PAID)" : `COD (COLLECT ₹${dispatchedDeliveryData.total})`}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/80 truncate">
-                  📍 {dispatchedDeliveryData.deliveryAddress}
+                <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/80 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate">{dispatchedDeliveryData.deliveryAddress}</span>
                 </div>
               </div>
 
@@ -2120,7 +2131,8 @@ export default function PosTerminalPage() {
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-xs text-blue-900 flex items-center gap-1.5">
-                    👤 1. Customer Live Tracking Link
+                    <User className="h-3.5 w-3.5 text-blue-700" />
+                    <span>1. Customer Live Tracking Link</span>
                   </span>
                   <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
                     Customer Status Portal
@@ -2143,9 +2155,19 @@ export default function PosTerminalPage() {
                       setCopiedLinkType("CUSTOMER");
                       setTimeout(() => setCopiedLinkType(null), 2500);
                     }}
-                    className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0"
+                    className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 flex items-center gap-1"
                   >
-                    {copiedLinkType === "CUSTOMER" ? "Copied! ✓" : "Copy Link 📋"}
+                    {copiedLinkType === "CUSTOMER" ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy Link</span>
+                      </>
+                    )}
                   </button>
                 </div>
                 {dispatchedDeliveryData.customerPhone && (
@@ -2161,7 +2183,9 @@ export default function PosTerminalPage() {
                     }}
                     className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
                   >
-                    <span>💬 Send Tracking Link to Customer on WhatsApp ↗</span>
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    <span>Send Tracking Link to Customer on WhatsApp</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
@@ -2170,7 +2194,8 @@ export default function PosTerminalPage() {
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-xs text-amber-950 flex items-center gap-1.5">
-                    🛵 2. Delivery Guy Navigation & Portal Link
+                    <Bike className="h-3.5 w-3.5 text-amber-800" />
+                    <span>2. Rider Navigation & Portal Link</span>
                   </span>
                   <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
                     Rider Navigation
@@ -2193,9 +2218,19 @@ export default function PosTerminalPage() {
                       setCopiedLinkType("DRIVER");
                       setTimeout(() => setCopiedLinkType(null), 2500);
                     }}
-                    className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0"
+                    className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 flex items-center gap-1"
                   >
-                    {copiedLinkType === "DRIVER" ? "Copied! ✓" : "Copy Link 📋"}
+                    {copiedLinkType === "DRIVER" ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy Link</span>
+                      </>
+                    )}
                   </button>
                 </div>
                 <button
@@ -2215,7 +2250,9 @@ export default function PosTerminalPage() {
                   }}
                   className="w-full py-2 px-3 rounded-lg bg-[#25D366] hover:bg-[#1eb857] text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
                 >
-                  <span>💬 Send Assignment & GPS Route to Rider on WhatsApp ↗</span>
+                  <Navigation className="h-3.5 w-3.5" />
+                  <span>Send Assignment & GPS Route to Rider on WhatsApp</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -2228,9 +2265,10 @@ export default function PosTerminalPage() {
                   setShowDeliveryLinksModal(false);
                   handleClearScreen();
                 }}
-                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition active:scale-[0.98] cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
-                ✓ Done & Start Next Order
+                <Check className="h-4 w-4 text-emerald-400" />
+                <span>Done & Start Next Order</span>
               </button>
             </div>
           </div>
@@ -2244,7 +2282,7 @@ export default function PosTerminalPage() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs">
-                  🛵
+                  <Bike className="h-4 w-4 text-slate-950" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-800">Delivery Orders & Dispatch ({filteredDeliveries.length})</h3>
@@ -2299,13 +2337,14 @@ export default function PosTerminalPage() {
                   {/* Card Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${d.source === "WEBSITE" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
-                        {d.source === "WEBSITE" ? "🌐 Website" : "🏪 POS In-Store"}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border flex items-center gap-1 ${d.source === "WEBSITE" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
+                        {d.source === "WEBSITE" ? <Globe className="h-3 w-3" /> : <Store className="h-3 w-3" />}
+                        <span>{d.source === "WEBSITE" ? "Website" : "POS In-Store"}</span>
                       </span>
                       <span className="font-mono font-bold text-xs text-slate-800">#{d.referenceNo}</span>
                       {d.isAdvance && (
                         <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold text-[9px]">
-                          📅 Advance {d.scheduledTime ? `(${d.scheduledTime})` : ""}
+                          Advance {d.scheduledTime ? `(${d.scheduledTime})` : ""}
                         </span>
                       )}
                     </div>
@@ -2329,31 +2368,38 @@ export default function PosTerminalPage() {
                     <div className="flex items-center gap-1.5">
                       <a
                         href={`tel:${d.customerPhone}`}
-                        className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200"
+                        className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200 flex items-center gap-1"
                       >
-                        📞 Call
+                        <Phone className="h-3 w-3" />
+                        <span>Call</span>
                       </a>
                       <a
                         href={`https://wa.me/91${d.customerPhone.replace(/[^0-9]/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-800 font-bold text-[10px] border border-green-200"
+                        className="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-800 font-bold text-[10px] border border-green-200 flex items-center gap-1"
                       >
-                        💬 WhatsApp
+                        <MessageSquare className="h-3 w-3" />
+                        <span>WhatsApp</span>
                       </a>
                     </div>
                   </div>
 
                   {/* Address */}
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
-                    <div className="text-[11px] text-slate-700 font-medium">📍 {d.deliveryAddress}</div>
+                    <div className="text-[11px] text-slate-700 font-medium flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>{d.deliveryAddress}</span>
+                    </div>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d.deliveryAddress)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 pt-0.5"
                     >
-                      🗺️ Open Google Maps GPS Route ↗
+                      <Navigation className="h-3 w-3" />
+                      <span>Open Google Maps GPS Route</span>
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
 
@@ -2376,7 +2422,8 @@ export default function PosTerminalPage() {
                       }}
                       className="py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      👤 Copy Customer Link
+                      <User className="h-3 w-3" />
+                      <span>Copy Customer Link</span>
                     </button>
                     <button
                       type="button"
@@ -2387,7 +2434,8 @@ export default function PosTerminalPage() {
                       }}
                       className="py-1.5 px-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200 flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      🛵 Copy Rider Route Link
+                      <Bike className="h-3 w-3" />
+                      <span>Copy Rider Route Link</span>
                     </button>
                   </div>
 
@@ -2421,13 +2469,14 @@ export default function PosTerminalPage() {
                       type="button"
                       disabled={busy || d.status === "DELIVERED"}
                       onClick={() => void handleUpdateDeliveryOrderStatus(d.id, "DELIVERED")}
-                      className={`py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                      className={`py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer flex items-center justify-center gap-1 ${
                         d.status === "DELIVERED"
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                           : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
-                      Delivered ✓
+                      <Check className="h-3 w-3" />
+                      <span>Delivered</span>
                     </button>
                   </div>
                 </div>
@@ -2435,7 +2484,7 @@ export default function PosTerminalPage() {
 
               {filteredDeliveries.length === 0 && (
                 <div className="p-12 text-center text-xs text-slate-400 font-semibold space-y-1">
-                  <div className="text-2xl">🛵</div>
+                  <Bike className="h-8 w-8 text-slate-300 mx-auto mb-1" />
                   <div>No delivery orders in this category.</div>
                 </div>
               )}
@@ -2946,7 +2995,7 @@ export default function PosTerminalPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">🔌 USB / Cable</span>
+                        <span className="text-xs font-bold">USB / Cable</span>
                         {printerConnectionType === "CABLE" && <Check className="h-4 w-4 text-blue-600 font-bold" />}
                       </div>
                       <span className="text-[10px] text-slate-500 mt-1 block">Windows Driver / Kiosk Print</span>
@@ -2962,7 +3011,7 @@ export default function PosTerminalPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">📶 Bluetooth</span>
+                        <span className="text-xs font-bold">Bluetooth</span>
                         {printerConnectionType === "BLUETOOTH" && <Check className="h-4 w-4 text-emerald-600 font-bold" />}
                       </div>
                       <span className="text-[10px] text-slate-500 mt-1 block">Wireless ESC/POS Direct Pair</span>
@@ -2975,7 +3024,7 @@ export default function PosTerminalPage() {
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-slate-700">Bluetooth Connection:</span>
                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${btDeviceName ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-100 text-amber-800 border border-amber-300"}`}>
-                          {btDeviceName ? `🟢 Paired: ${btDeviceName}` : "🔴 Disconnected"}
+                          {btDeviceName ? `Paired: ${btDeviceName}` : "Disconnected"}
                         </span>
                       </div>
 
@@ -2993,7 +3042,7 @@ export default function PosTerminalPage() {
                       <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                         <span>USB Cable / Desktop Driver:</span>
                         <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                          {isDesktopApp ? "⚡ Desktop Native (.exe)" : "🟢 Active (USB / Driver)"}
+                          {isDesktopApp ? "Desktop Native (.exe)" : "Active (USB / Driver)"}
                         </span>
                       </div>
 
@@ -3009,7 +3058,7 @@ export default function PosTerminalPage() {
                           >
                             {desktopPrinters.map((p) => (
                               <option key={p.name} value={p.name}>
-                                🖨️ {p.name} {p.isDefault ? "(Windows Default)" : ""}
+                                {p.name} {p.isDefault ? "(Windows Default)" : ""}
                               </option>
                             ))}
                           </select>
@@ -3046,14 +3095,14 @@ export default function PosTerminalPage() {
                 onClick={() => void testPrinterConnection()}
                 className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>🧪 Test Connection</span>
+                <span>Test Connection</span>
               </button>
               <button
                 type="button"
                 onClick={() => void savePrinterSettings()}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>💾 Save Printer Config</span>
+                <span>Save Printer Config</span>
               </button>
             </div>
           </div>
@@ -3068,7 +3117,8 @@ export default function PosTerminalPage() {
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3 shrink-0">
                 <div>
                   <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <span>🕒 Recent Kitchen Orders (KOTs)</span>
+                    <Clock className="h-4 w-4 text-slate-600" />
+                    <span>Recent Kitchen Orders (KOTs)</span>
                     <span className="px-2.5 py-0.5 rounded-full bg-amber-100/80 text-amber-800 text-[10px] font-mono font-bold">
                       {recentKots.length} Today
                     </span>
@@ -3082,7 +3132,7 @@ export default function PosTerminalPage() {
 
               {recentKots.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-2">
-                  <span className="text-3xl">🍳</span>
+                  <Clock className="h-8 w-8 text-slate-300" />
                   <div className="font-bold text-xs text-slate-600">No Active KOTs</div>
                   <p className="text-[11px] text-slate-400">All kitchen orders are cleared for today's shift.</p>
                 </div>
