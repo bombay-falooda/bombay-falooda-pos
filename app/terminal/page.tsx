@@ -342,6 +342,10 @@ export default function PosTerminalPage() {
   const activeTotal = cartSubtotal;
   const payableTotal = Math.max(activeTotal - Number(discount || 0), 0);
 
+  const todayFinalizedBills = useMemo(() => {
+    return allTodayBills.filter((b) => b.status === "FINALIZED");
+  }, [allTodayBills]);
+
   function addItemDirectly(item: MenuItem, addons: MenuAddon[] = []) {
     const addonTotal = addons.reduce((sum, addon) => sum + addon.price, 0);
     setCart((current) => [
@@ -595,6 +599,8 @@ export default function PosTerminalPage() {
     }
 
     await runAction(async () => {
+      const hasKotAlready = Boolean(activeBill?.kotTickets && activeBill.kotTickets.length > 0);
+
       let bill = activeBill;
       if (!bill) {
         const body = {
@@ -611,25 +617,61 @@ export default function PosTerminalPage() {
             type: orderType,
             customerName: customerName || undefined,
             customerPhone: customerPhone || undefined,
+            customerEmail: customerEmail || undefined,
             notes: billNote,
             notePrintEnabled: true,
           },
         });
-        setActiveBill(bill);
-        setCart([]);
+      } else {
+        // Update items if cart was modified
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/items`, {
+          method: "PATCH",
+          body,
+        });
       }
 
-      try {
-        await apiRequest(`/pos-terminal/bills/${bill.id}/kot`, {
-          method: "POST",
-          body: { notes: billNote },
-        });
-      } catch {
-        // KOT ticket generated or existing
+      let kotNum = bill.kotTickets?.[0]?.kotNumber;
+
+      // If KOT was not printed yet, generate KOT
+      if (!hasKotAlready) {
+        try {
+          const kotResult = await apiRequest<{ kotNumber: string }>(`/pos-terminal/bills/${bill.id}/kot`, {
+            method: "POST",
+            body: { notes: billNote },
+          });
+          if (kotResult?.kotNumber) {
+            kotNum = kotResult.kotNumber;
+          }
+        } catch {
+          // KOT ticket generated or existing
+        }
+      }
+
+      // Finalize and generate Bill
+      const finalizedBill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/finalize`, {
+        method: "PATCH",
+        body: {
+          discount: Number(discount || 0),
+          payments: [{ method: paymentMethod, amount: payableTotal }],
+        },
+      });
+
+      // If KOT was already printed previously, only print Bill receipt!
+      // Otherwise print BOTH KOT and Bill receipts!
+      if (hasKotAlready) {
+        await triggerThermalPrint("BILL_ONLY", finalizedBill, kotNum);
+      } else {
+        await triggerThermalPrint("BOTH", finalizedBill, kotNum);
       }
 
       await loadTerminal();
-      await triggerThermalPrint("BOTH", bill);
       handleClearScreen();
     });
   }
@@ -657,12 +699,23 @@ export default function PosTerminalPage() {
             type: orderType,
             customerName: customerName || undefined,
             customerPhone: customerPhone || undefined,
+            customerEmail: customerEmail || undefined,
             notes: billNote,
             notePrintEnabled: true,
           },
         });
-        setActiveBill(bill);
-        setCart([]);
+      } else {
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/items`, {
+          method: "PATCH",
+          body,
+        });
       }
 
       const kotResult = await apiRequest<{ kotNumber: string }>(`/pos-terminal/bills/${bill.id}/kot`, {
@@ -670,23 +723,55 @@ export default function PosTerminalPage() {
         body: { notes: billNote },
       });
 
-      await loadTerminal();
       await triggerThermalPrint("KOT_ONLY", bill, kotResult.kotNumber);
+      await loadTerminal();
       handleClearScreen();
     });
   }
 
   async function finalizeAndPrintBillOnly() {
-    if (!activeBill && cart.length > 0) {
-      await createOrAddBill(false);
-    }
-    if (!activeBill) {
-      setError("No active bill selected to finalize");
+    if (!cart.length && !activeBill) {
+      setError("Please select at least one item from left menu");
       return;
     }
 
     await runAction(async () => {
-      const bill = await apiRequest<Bill>(`/pos-terminal/bills/${activeBill.id}/finalize`, {
+      let bill = activeBill;
+      if (!bill) {
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>("/pos-terminal/bills", {
+          method: "POST",
+          body: {
+            ...body,
+            type: orderType,
+            customerName: customerName || undefined,
+            customerPhone: customerPhone || undefined,
+            customerEmail: customerEmail || undefined,
+            notes: billNote,
+            notePrintEnabled: true,
+          },
+        });
+      } else {
+        const body = {
+          items: cart.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+            addons: item.addons,
+          })),
+        };
+        bill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/items`, {
+          method: "PATCH",
+          body,
+        });
+      }
+
+      const finalizedBill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/finalize`, {
         method: "PATCH",
         body: {
           discount: Number(discount || 0),
@@ -694,13 +779,9 @@ export default function PosTerminalPage() {
         },
       });
 
-      setMessage(`Bill #${bill.billNumber} finalized & paid.`);
-      await triggerThermalPrint("BILL_ONLY", bill);
-      setTimeout(() => {
-        handleClearScreen();
-      }, 500);
-
+      await triggerThermalPrint("BILL_ONLY", finalizedBill, finalizedBill.kotTickets?.[0]?.kotNumber);
       await loadTerminal();
+      handleClearScreen();
     });
   }
 
@@ -717,16 +798,27 @@ export default function PosTerminalPage() {
     }
   }
 
-  function editKot(kot: KotTicket) {
+  function loadKotIntoRegister(kot: KotTicket) {
     if (!kot.bill) return;
     setActiveBill(kot.bill);
-    setCart([]);
+    setCart(
+      (kot.bill.items || []).map((it: any, idx: number) => ({
+        localId: `${it.id || idx}-${Date.now()}`,
+        itemId: it.itemId || it.id,
+        name: it.name,
+        quantity: Number(it.quantity || 1),
+        unitPrice: Number(it.unitPrice || (Number(it.total) / (Number(it.quantity) || 1))),
+        addons: Array.isArray(it.addons)
+          ? it.addons.map((a: any) => ({ addonId: a.addonId || a.id, name: a.name, price: Number(a.price || 0) }))
+          : [],
+      }))
+    );
     setCustomerName(kot.bill.customerName || "");
     setCustomerPhone(kot.bill.customerPhone || "");
     setCustomerEmail(kot.bill.customerEmail || "");
     setBillNote(kot.notes || kot.bill.notes || "");
+    setDiscount(String(kot.bill.discount || 0));
     setShowRecentKotsDrawer(false);
-    setMessage(`Editing KOT #${kot.kotNumber} for Bill #${kot.bill.billNumber}`);
   }
 
   function updateQuantity(localId: string, delta: number) {
@@ -1395,8 +1487,8 @@ export default function PosTerminalPage() {
           <div className="bg-white h-full w-[450px] p-5 space-y-3 shadow-2xl border-l border-slate-200 flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
               <div>
-                <h3 className="font-bold text-sm text-slate-800">Held Bills Queue ({heldBills.length})</h3>
-                <p className="text-[11px] text-slate-500">Select a held bill to resume billing</p>
+                <h3 className="font-bold text-sm text-slate-800">Held Orders Queue ({heldBills.length})</h3>
+                <p className="text-[11px] text-slate-500">Select a held order to resume billing in register</p>
               </div>
               <button type="button" onClick={() => setShowHoldModal(false)} className="p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                 <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
@@ -1428,10 +1520,15 @@ export default function PosTerminalPage() {
                     setDiscount(String(b.discount || 0));
                     setShowHoldModal(false);
                   }}
-                  className="p-3 rounded-lg border border-slate-200 hover:border-[#b82e46] bg-slate-50 hover:bg-white cursor-pointer transition shadow-2xs flex items-center justify-between"
+                  className="p-3 rounded-xl border border-slate-200 hover:border-amber-500 bg-amber-50/40 hover:bg-white cursor-pointer transition-all shadow-2xs flex items-center justify-between"
                 >
-                  <div>
-                    <div className="font-bold text-xs text-slate-900">{b.billNumber}</div>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                        {b.kotTickets?.[0]?.kotNumber ? `#${b.kotTickets[0].kotNumber}` : `Token #${b.id.slice(-4).toUpperCase()}`}
+                      </span>
+                      <span className="text-[10px] text-amber-700 uppercase font-bold">HELD</span>
+                    </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
                       {b.customerName || "Walk-in"} • {b.items.length} items
                     </div>
@@ -1443,7 +1540,7 @@ export default function PosTerminalPage() {
               ))}
               {heldBills.length === 0 && (
                 <div className="p-8 text-center text-xs text-slate-500 font-semibold">
-                  No held bills in queue.
+                  No held orders in queue.
                 </div>
               )}
             </div>
@@ -1733,8 +1830,13 @@ export default function PosTerminalPage() {
           <div className="bg-white h-full w-[480px] p-5 space-y-3 shadow-2xl border-l border-slate-200 flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
               <div>
-                <h3 className="font-bold text-sm text-slate-800">Total Orders Today</h3>
-                <p className="text-[11px] text-slate-500">All counter & online bills generated today</p>
+                <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                  <span>Today's Finalized Orders</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                    {todayFinalizedBills.length} Bills
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">All finalized bills generated today (Bill-wise read only)</p>
               </div>
               <button type="button" onClick={() => setShowTodayOrdersDrawer(false)} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
                 <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
@@ -1742,12 +1844,14 @@ export default function PosTerminalPage() {
             </div>
 
             <div className="flex-1 space-y-2.5 overflow-y-auto scrollbar-none pr-1">
-              {(allTodayBills.length > 0 ? allTodayBills : heldBills).map((b) => (
+              {todayFinalizedBills.map((b) => (
                 <div key={b.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2 shadow-2xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">{b.billNumber}</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${b.status === "FINALIZED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                      {b.status}
+                    <span className="font-mono font-bold text-xs text-slate-900 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                      Bill #{b.billNumber}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      PAID
                     </span>
                   </div>
                   <div className="text-xs text-slate-600 flex justify-between">
@@ -1775,9 +1879,9 @@ export default function PosTerminalPage() {
                   </div>
                 </div>
               ))}
-              {allTodayBills.length === 0 && heldBills.length === 0 && (
+              {todayFinalizedBills.length === 0 && (
                 <div className="p-8 text-center text-xs text-slate-400 font-medium">
-                  No orders generated today yet.
+                  No finalized bills generated today yet.
                 </div>
               )}
             </div>
@@ -2184,7 +2288,7 @@ export default function PosTerminalPage() {
                       {recentKots.length} Today
                     </span>
                   </h3>
-                  <p className="text-[11px] text-slate-500">Inspect open KOTs, edit items, or convert directly to printed bill</p>
+                  <p className="text-[11px] text-slate-500">Click any KOT to load into register and bill</p>
                 </div>
                 <button type="button" onClick={() => setShowRecentKotsDrawer(false)} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
                   <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
@@ -2200,14 +2304,18 @@ export default function PosTerminalPage() {
               ) : (
                 <div className="flex-1 overflow-y-auto space-y-3 scrollbar-none pr-1">
                   {recentKots.map((kot) => (
-                    <div key={kot.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2.5 shadow-2xs">
+                    <div
+                      key={kot.id}
+                      onClick={() => loadKotIntoRegister(kot)}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white hover:border-[#b82e46] hover:shadow-md cursor-pointer transition-all space-y-2.5 shadow-2xs group"
+                    >
                       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-black text-[#2563eb] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                          <span className="font-mono text-xs font-black text-[#2563eb] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                             #{kot.kotNumber}
                           </span>
-                          <span className="text-[11px] font-bold text-slate-700">
-                            Bill #{kot.bill?.billNumber || "Draft"}
+                          <span className="text-[10px] text-slate-500 font-semibold">
+                            {kot.bill?.orderType || "Takeaway"}
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-500 font-mono">
@@ -2235,28 +2343,8 @@ export default function PosTerminalPage() {
                         </div>
                       )}
 
-                      {/* Card Action Buttons */}
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
-                        <button
-                          type="button"
-                          onClick={() => editKot(kot)}
-                          className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs transition cursor-pointer shadow-2xs"
-                        >
-                          ✏️ Edit KOT
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (kot.bill) {
-                              setActiveBill(kot.bill);
-                              void finalizeAndPrintBillOnly();
-                              setShowRecentKotsDrawer(false);
-                            }
-                          }}
-                          className="flex-1 py-1.5 rounded-lg bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-xs transition shadow-2xs cursor-pointer"
-                        >
-                          🖨️ Print Bill
-                        </button>
+                      <div className="text-[10px] text-[#b82e46] font-bold text-center pt-1 border-t border-slate-100 group-hover:underline">
+                        Click to load order into menu & bill ➔
                       </div>
                     </div>
                   ))}
