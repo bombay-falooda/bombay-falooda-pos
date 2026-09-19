@@ -112,6 +112,35 @@ export default function PosTerminalPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
+  // Delivery Flow State
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryPaymentType, setDeliveryPaymentType] = useState<"COD" | "PAID">("COD");
+  const [selectedDriver, setSelectedDriver] = useState<{ id: string; name: string; phone: string }>({
+    id: "tm-1",
+    name: "Sahir Qureshi",
+    phone: "9876543210",
+  });
+  const [useCustomDriver, setUseCustomDriver] = useState(false);
+  const [customDriverName, setCustomDriverName] = useState("");
+  const [customDriverPhone, setCustomDriverPhone] = useState("");
+  const [showDeliveryAssignModal, setShowDeliveryAssignModal] = useState(false);
+  const [showDeliveryLinksModal, setShowDeliveryLinksModal] = useState(false);
+  const [pendingPrintMode, setPendingPrintMode] = useState<"BOTH" | "BILL_ONLY">("BOTH");
+  const [dispatchedDeliveryData, setDispatchedDeliveryData] = useState<{
+    orderId: string;
+    billNumber: string;
+    customerName: string;
+    customerPhone: string;
+    deliveryAddress: string;
+    driverName: string;
+    driverPhone: string;
+    paymentType: "COD" | "PAID";
+    total: number;
+    customerTrackingUrl: string;
+    driverNavUrl: string;
+  } | null>(null);
+  const [copiedLinkType, setCopiedLinkType] = useState<"CUSTOMER" | "DRIVER" | null>(null);
+
   // Recent KOTs & Center Addons Modal State
   const [showRecentKotsDrawer, setShowRecentKotsDrawer] = useState(false);
   const [recentKots, setRecentKots] = useState<KotTicket[]>([]);
@@ -484,7 +513,42 @@ export default function PosTerminalPage() {
     });
   }
 
-  async function triggerThermalPrint(mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY", billData?: Bill | null, kotNumber?: string) {
+  function getWhatsAppCustomerUrl(phone: string, name: string, trackingUrl: string) {
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const msg = encodeURIComponent(
+      `🍨 Hello ${name || "Customer"}!\n\nYour Bombay Falooda order is confirmed & on the way!\n\nTrack your order live here:\n${trackingUrl}\n\nThank you for ordering with Bombay Falooda!`
+    );
+    return `https://wa.me/${formattedPhone}?text=${msg}`;
+  }
+
+  function getWhatsAppDriverUrl(
+    driverPhone: string,
+    driverName: string,
+    custName: string,
+    custPhone: string,
+    address: string,
+    payType: "COD" | "PAID",
+    amount: number,
+    navUrl: string
+  ) {
+    const cleanPhone = driverPhone.replace(/[^0-9]/g, "");
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const payMsg = payType === "PAID" ? "✅ ALREADY PAID (DO NOT COLLECT)" : `💵 CASH ON DELIVERY - COLLECT ₹${amount}`;
+    const msg = encodeURIComponent(
+      `🛵 *Bombay Falooda Delivery Assignment*\n\nHi ${driverName}, new delivery assigned to you!\n\n👤 *Customer:* ${custName} (${custPhone})\n📍 *Address:* ${address}\n💰 *Payment:* ${payMsg}\n\n🗺️ *Start GPS Navigation & Update Status:*\n${navUrl}`
+    );
+    return `https://wa.me/${formattedPhone}?text=${msg}`;
+  }
+
+  async function triggerThermalPrint(
+    mode: "BOTH" | "KOT_ONLY" | "BILL_ONLY",
+    billData?: Bill | null,
+    kotNumber?: string,
+    deliveryAddr?: string,
+    driverName?: string,
+    deliveryPayType?: "COD" | "PAID"
+  ) {
     setPrintMode(mode);
 
     const electron = typeof window !== "undefined" ? (window as any).electronAPI : null;
@@ -536,7 +600,10 @@ export default function PosTerminalPage() {
         customerPhone || billData?.customerPhone || undefined,
         Number(discount || billData?.discount || 0),
         customerEmail || billData?.customerEmail || undefined,
-        billNote || billData?.notes || undefined
+        billNote || billData?.notes || undefined,
+        deliveryAddr || deliveryAddress || undefined,
+        driverName || undefined,
+        deliveryPayType || (orderType === "DELIVERY" ? deliveryPaymentType : undefined)
       );
     }
 
@@ -589,6 +656,11 @@ export default function PosTerminalPage() {
     setCustomerEmail("");
     setBillNote("");
     setDiscount("0");
+    setDeliveryAddress("");
+    setCustomDriverName("");
+    setCustomDriverPhone("");
+    setUseCustomDriver(false);
+    setDeliveryPaymentType("COD");
     setMessage("Screen cleared for new order.");
   }
 
@@ -598,8 +670,40 @@ export default function PosTerminalPage() {
       return;
     }
 
+    if (orderType === "DELIVERY" && !showDeliveryAssignModal) {
+      setPendingPrintMode("BOTH");
+      setShowDeliveryAssignModal(true);
+      return;
+    }
+
+    await executeFinalizeAndPrint("BOTH");
+  }
+
+  async function finalizeAndPrintBillOnly() {
+    if (!cart.length && !activeBill) {
+      setError("Please select at least one item from left menu");
+      return;
+    }
+
+    if (orderType === "DELIVERY" && !showDeliveryAssignModal) {
+      setPendingPrintMode("BILL_ONLY");
+      setShowDeliveryAssignModal(true);
+      return;
+    }
+
+    await executeFinalizeAndPrint("BILL_ONLY");
+  }
+
+  async function executeFinalizeAndPrint(mode: "BOTH" | "BILL_ONLY") {
     await runAction(async () => {
       const hasKotAlready = Boolean(activeBill?.kotTickets && activeBill.kotTickets.length > 0);
+
+      const assignedDriverName = useCustomDriver
+        ? (customDriverName.trim() || "Delivery Rider")
+        : (selectedDriver?.name || "Sahir Qureshi");
+      const assignedDriverPhone = useCustomDriver
+        ? (customDriverPhone.trim() || "9876543210")
+        : (selectedDriver?.phone || "9876543210");
 
       let bill = activeBill;
       if (!bill) {
@@ -618,7 +722,7 @@ export default function PosTerminalPage() {
             customerName: customerName || undefined,
             customerPhone: customerPhone || undefined,
             customerEmail: customerEmail || undefined,
-            notes: billNote,
+            notes: orderType === "DELIVERY" && deliveryAddress ? `[Delivery: ${deliveryAddress}] ${billNote}` : billNote,
             notePrintEnabled: true,
           },
         });
@@ -640,7 +744,7 @@ export default function PosTerminalPage() {
       let kotNum = bill.kotTickets?.[0]?.kotNumber;
 
       // If KOT was not printed yet, generate KOT
-      if (!hasKotAlready) {
+      if (!hasKotAlready && mode === "BOTH") {
         try {
           const kotResult = await apiRequest<{ kotNumber: string }>(`/pos-terminal/bills/${bill.id}/kot`, {
             method: "POST",
@@ -655,24 +759,47 @@ export default function PosTerminalPage() {
       }
 
       // Finalize and generate Bill
+      const chosenPaymentMethod = orderType === "DELIVERY" && deliveryPaymentType === "COD" ? "CASH" : paymentMethod;
       const finalizedBill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/finalize`, {
         method: "PATCH",
         body: {
           discount: Number(discount || 0),
-          payments: [{ method: paymentMethod, amount: payableTotal }],
+          payments: [{ method: chosenPaymentMethod, amount: payableTotal }],
         },
       });
 
       // If KOT was already printed previously, only print Bill receipt!
-      // Otherwise print BOTH KOT and Bill receipts!
-      if (hasKotAlready) {
-        await triggerThermalPrint("BILL_ONLY", finalizedBill, kotNum);
-      } else {
-        await triggerThermalPrint("BOTH", finalizedBill, kotNum);
-      }
+      const actualPrintMode = hasKotAlready && mode === "BOTH" ? "BILL_ONLY" : mode;
+      await triggerThermalPrint(
+        actualPrintMode,
+        finalizedBill,
+        kotNum,
+        deliveryAddress,
+        assignedDriverName,
+        deliveryPaymentType
+      );
 
       await loadTerminal();
-      handleClearScreen();
+
+      if (orderType === "DELIVERY") {
+        setDispatchedDeliveryData({
+          orderId: finalizedBill.id,
+          billNumber: finalizedBill.billNumber,
+          customerName: customerName || "Customer",
+          customerPhone: customerPhone || "",
+          deliveryAddress: deliveryAddress || "Outlet Delivery Area",
+          driverName: assignedDriverName,
+          driverPhone: assignedDriverPhone,
+          paymentType: deliveryPaymentType,
+          total: payableTotal,
+          customerTrackingUrl: `http://localhost:3003/track/${finalizedBill.id}`,
+          driverNavUrl: `http://localhost:3003/delivery-nav/${finalizedBill.id}`,
+        });
+        setShowDeliveryAssignModal(false);
+        setShowDeliveryLinksModal(true);
+      } else {
+        handleClearScreen();
+      }
     });
   }
 
@@ -700,7 +827,7 @@ export default function PosTerminalPage() {
             customerName: customerName || undefined,
             customerPhone: customerPhone || undefined,
             customerEmail: customerEmail || undefined,
-            notes: billNote,
+            notes: orderType === "DELIVERY" && deliveryAddress ? `[Delivery: ${deliveryAddress}] ${billNote}` : billNote,
             notePrintEnabled: true,
           },
         });
@@ -724,62 +851,6 @@ export default function PosTerminalPage() {
       });
 
       await triggerThermalPrint("KOT_ONLY", bill, kotResult.kotNumber);
-      await loadTerminal();
-      handleClearScreen();
-    });
-  }
-
-  async function finalizeAndPrintBillOnly() {
-    if (!cart.length && !activeBill) {
-      setError("Please select at least one item from left menu");
-      return;
-    }
-
-    await runAction(async () => {
-      let bill = activeBill;
-      if (!bill) {
-        const body = {
-          items: cart.map((item) => ({
-            itemId: item.itemId,
-            quantity: item.quantity,
-            addons: item.addons,
-          })),
-        };
-        bill = await apiRequest<Bill>("/pos-terminal/bills", {
-          method: "POST",
-          body: {
-            ...body,
-            type: orderType,
-            customerName: customerName || undefined,
-            customerPhone: customerPhone || undefined,
-            customerEmail: customerEmail || undefined,
-            notes: billNote,
-            notePrintEnabled: true,
-          },
-        });
-      } else {
-        const body = {
-          items: cart.map((item) => ({
-            itemId: item.itemId,
-            quantity: item.quantity,
-            addons: item.addons,
-          })),
-        };
-        bill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/items`, {
-          method: "PATCH",
-          body,
-        });
-      }
-
-      const finalizedBill = await apiRequest<Bill>(`/pos-terminal/bills/${bill.id}/finalize`, {
-        method: "PATCH",
-        body: {
-          discount: Number(discount || 0),
-          payments: [{ method: paymentMethod, amount: payableTotal }],
-        },
-      });
-
-      await triggerThermalPrint("BILL_ONLY", finalizedBill, finalizedBill.kotTickets?.[0]?.kotNumber);
       await loadTerminal();
       handleClearScreen();
     });
@@ -1308,6 +1379,22 @@ export default function PosTerminalPage() {
             </div>
           </div>
 
+          {/* Quick Delivery Address Bar when Delivery tab active */}
+          {orderType === "DELIVERY" && (
+            <div className="p-2 border-b border-amber-200/80 bg-amber-50/50 flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 border border-amber-200">
+                <Bike className="h-3.5 w-3.5 text-amber-700" />
+              </div>
+              <input
+                type="text"
+                placeholder="Delivery Address / Landmark / Maps link..."
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                className="flex-1 h-7.5 rounded-lg border border-amber-200 bg-white px-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+              />
+            </div>
+          )}
+
           {/* Cart Items Table Header */}
           <div className="grid grid-cols-12 px-2.5 sm:px-3.5 py-2 bg-slate-50/90 border-b border-slate-200 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <div className="col-span-5">ITEMS</div>
@@ -1653,6 +1740,381 @@ export default function PosTerminalPage() {
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white text-xs font-bold shadow-sm transition active:scale-[0.98] cursor-pointer"
               >
                 Save Customer Info
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGN DELIVERY & PAYMENT MODAL */}
+      {showDeliveryAssignModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[94vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-md shadow-amber-500/20">
+                  🛵
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white leading-tight">Assign Delivery Partner & Payment</h3>
+                  <p className="text-[11px] text-slate-400">Order #{activeBill?.billNumber || "New"} • {cart.length} items</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeliveryAssignModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 text-slate-800 scrollbar-none">
+              {/* Grand Total Strip */}
+              <div className="p-3 rounded-xl bg-gradient-to-r from-slate-100 to-slate-50 border border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Total Order Payable</span>
+                <span className="font-mono text-xl font-black text-emerald-700">₹{payableTotal.toLocaleString("en-IN")}</span>
+              </div>
+
+              {/* Payment Mode Selector: COD vs PAID */}
+              <div className="space-y-2">
+                <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                  1. Payment Collection Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div
+                    onClick={() => setDeliveryPaymentType("COD")}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      deliveryPaymentType === "COD"
+                        ? "border-amber-500 bg-amber-50/80 shadow-xs ring-2 ring-amber-500/20"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-black text-xs text-amber-950 flex items-center gap-1.5">
+                        💵 Cash On Delivery (COD)
+                      </span>
+                      {deliveryPaymentType === "COD" && <Check className="h-4 w-4 text-amber-600 stroke-[3]" />}
+                    </div>
+                    <p className="text-[10.5px] text-amber-800/90 font-medium leading-tight">
+                      Rider collects <strong className="font-mono font-bold">₹{payableTotal}</strong> at customer doorstep
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setDeliveryPaymentType("PAID")}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      deliveryPaymentType === "PAID"
+                        ? "border-emerald-500 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-black text-xs text-emerald-950 flex items-center gap-1.5">
+                        ✅ Already Paid (Prepaid)
+                      </span>
+                      {deliveryPaymentType === "PAID" && <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />}
+                    </div>
+                    <p className="text-[10.5px] text-emerald-800/90 font-medium leading-tight">
+                      Paid via UPI/Card/Counter. Zero cash to collect.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery Address & Landmark Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                  2. Delivery Address / Landmark / Google Maps Link
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Flat 402, Royal Residency, Near D-Mart, Varachha Road (or paste Google Maps link)"
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50/60 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:bg-white focus:border-[#b82e46] focus:ring-2 focus:ring-[#b82e46]/10 transition"
+                />
+                <p className="text-[10.5px] text-slate-500">
+                  📍 Tip: Paste full text address or customer WhatsApp Google Maps share link for turn-by-turn navigation.
+                </p>
+              </div>
+
+              {/* Customer Contact Inputs */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Customer Name</label>
+                  <input
+                    type="text"
+                    placeholder="Customer Name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full h-8.5 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 text-xs text-slate-900 outline-none focus:bg-white focus:border-[#b82e46]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Customer Phone (WhatsApp)</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full h-8.5 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 text-xs font-mono text-slate-900 outline-none focus:bg-white focus:border-[#b82e46]"
+                  />
+                </div>
+              </div>
+
+              {/* Select Present Delivery Member */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                    3. Select Delivery Rider / Member
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomDriver(!useCustomDriver)}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                  >
+                    {useCustomDriver ? "← Select From Present Staff" : "+ External / Custom Rider"}
+                  </button>
+                </div>
+
+                {!useCustomDriver ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+                    {teamMembers.map((member) => {
+                      const isSelected = selectedDriver?.id === member.id;
+                      return (
+                        <div
+                          key={member.id}
+                          onClick={() => setSelectedDriver({ id: member.id, name: member.fullName, phone: member.phone || "9876543210" })}
+                          className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                            isSelected
+                              ? "border-blue-600 bg-blue-50/90 shadow-2xs ring-2 ring-blue-600/20"
+                              : "border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-bold text-xs text-slate-900 truncate">{member.fullName}</div>
+                            <div className="text-[10px] text-slate-500 font-mono truncate">{member.phone || "No phone"}</div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[9px] shrink-0">
+                            PRESENT
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">Rider Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Ramesh Rider"
+                        value={customDriverName}
+                        onChange={(e) => setCustomDriverName(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-900 outline-none focus:border-[#b82e46]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">Rider Phone</label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. 9876543210"
+                        value={customDriverPhone}
+                        onChange={(e) => setCustomDriverPhone(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-mono text-slate-900 outline-none focus:border-[#b82e46]"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowDeliveryAssignModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void executeFinalizeAndPrint(pendingPrintMode)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#b82e46] to-[#991b32] hover:from-[#a8253b] hover:to-[#88172c] text-white font-bold text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                <span>🚀 Dispatch Delivery & Print Bill</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELIVERY DISPATCHED SUCCESS & 2-LINKS SHARE MODAL */}
+      {showDeliveryLinksModal && dispatchedDeliveryData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[94vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+            {/* Top Banner */}
+            <div className="p-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0 shadow-md">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-white text-emerald-700 font-black text-base flex items-center justify-center shadow-md">
+                  ✓
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white leading-tight">Delivery Order Dispatched!</h3>
+                  <p className="text-[11px] text-emerald-100 font-mono">Bill #{dispatchedDeliveryData.billNumber.replace("BILL-", "")} • Total: ₹{dispatchedDeliveryData.total}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeliveryLinksModal(false);
+                  handleClearScreen();
+                }}
+                className="p-1 rounded-lg text-emerald-200 hover:text-white hover:bg-emerald-800 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 scrollbar-none text-slate-800">
+              {/* Info summary */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-slate-600">Assigned Rider:</span>
+                  <span className="text-slate-900">{dispatchedDeliveryData.driverName} ({dispatchedDeliveryData.driverPhone})</span>
+                </div>
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-slate-600">Payment Status:</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${dispatchedDeliveryData.paymentType === "PAID" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                    {dispatchedDeliveryData.paymentType === "PAID" ? "PREPAID (ALREADY PAID)" : `COD (COLLECT ₹${dispatchedDeliveryData.total})`}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/80 truncate">
+                  📍 {dispatchedDeliveryData.deliveryAddress}
+                </div>
+              </div>
+
+              {/* 1. CUSTOMER TRACKING LINK */}
+              <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-xs text-blue-900 flex items-center gap-1.5">
+                    👤 1. Customer Live Tracking Link
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
+                    Customer Status Portal
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-tight">
+                  Customer can see live preparation timeline, driver details, and delivery progress.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={dispatchedDeliveryData.customerTrackingUrl}
+                    className="flex-1 h-8 bg-white border border-blue-200 rounded-lg px-2.5 font-mono text-xs text-slate-700 outline-none truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(dispatchedDeliveryData.customerTrackingUrl);
+                      setCopiedLinkType("CUSTOMER");
+                      setTimeout(() => setCopiedLinkType(null), 2500);
+                    }}
+                    className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0"
+                  >
+                    {copiedLinkType === "CUSTOMER" ? "Copied! ✓" : "Copy Link 📋"}
+                  </button>
+                </div>
+                {dispatchedDeliveryData.customerPhone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = getWhatsAppCustomerUrl(
+                        dispatchedDeliveryData.customerPhone,
+                        dispatchedDeliveryData.customerName,
+                        dispatchedDeliveryData.customerTrackingUrl
+                      );
+                      window.open(url, "_blank");
+                    }}
+                    className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
+                  >
+                    <span>💬 Send Tracking Link to Customer on WhatsApp ↗</span>
+                  </button>
+                )}
+              </div>
+
+              {/* 2. DELIVERY GUY / RIDER LINK */}
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-xs text-amber-950 flex items-center gap-1.5">
+                    🛵 2. Delivery Guy Navigation & Portal Link
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                    Rider Navigation
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-tight">
+                  Rider gets 1-tap Google Maps GPS turn-by-turn navigation, customer call button, and delivery status buttons.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={dispatchedDeliveryData.driverNavUrl}
+                    className="flex-1 h-8 bg-white border border-amber-200 rounded-lg px-2.5 font-mono text-xs text-slate-700 outline-none truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(dispatchedDeliveryData.driverNavUrl);
+                      setCopiedLinkType("DRIVER");
+                      setTimeout(() => setCopiedLinkType(null), 2500);
+                    }}
+                    className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0"
+                  >
+                    {copiedLinkType === "DRIVER" ? "Copied! ✓" : "Copy Link 📋"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = getWhatsAppDriverUrl(
+                      dispatchedDeliveryData.driverPhone,
+                      dispatchedDeliveryData.driverName,
+                      dispatchedDeliveryData.customerName,
+                      dispatchedDeliveryData.customerPhone,
+                      dispatchedDeliveryData.deliveryAddress,
+                      dispatchedDeliveryData.paymentType,
+                      dispatchedDeliveryData.total,
+                      dispatchedDeliveryData.driverNavUrl
+                    );
+                    window.open(url, "_blank");
+                  }}
+                  className="w-full py-2 px-3 rounded-lg bg-[#25D366] hover:bg-[#1eb857] text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
+                >
+                  <span>💬 Send Assignment & GPS Route to Rider on WhatsApp ↗</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Done Action */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeliveryLinksModal(false);
+                  handleClearScreen();
+                }}
+                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition active:scale-[0.98] cursor-pointer"
+              >
+                ✓ Done & Start Next Order
               </button>
             </div>
           </div>

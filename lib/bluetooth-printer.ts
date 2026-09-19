@@ -263,7 +263,10 @@ export function buildEscPosBillReceipt(
   customerPhone?: string,
   discountAmount?: number,
   customerEmail?: string,
-  billNote?: string
+  billNote?: string,
+  deliveryAddress?: string,
+  driverName?: string,
+  deliveryPaymentType?: "COD" | "PAID"
 ): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.init();
@@ -297,7 +300,8 @@ export function buildEscPosBillReceipt(
 
   const billNoClean = billNumber.replace("BILL-", "").replace("INV-", "");
   const billStr = `Bill No: ${billNoClean}`.padEnd(24, " ");
-  const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : orderType;
+  const isDelivery = orderType.toUpperCase() === "DELIVERY";
+  const ordTypeLabel = orderType.toUpperCase() === "DINE_IN" ? "Dine In" : orderType.toUpperCase() === "PICK_UP" || orderType.toUpperCase() === "TAKEAWAY" ? "Pick Up" : isDelivery ? "Delivery" : orderType;
   const ordStr = `Order: ${ordTypeLabel}`.padStart(24, " ");
   encoder.bold(true).line(`${billStr}${ordStr}`).bold(false);
 
@@ -305,6 +309,20 @@ export function buildEscPosBillReceipt(
   const tokenStr = `Token No: ${tokenClean}`.padEnd(24, " ");
   const cashierStr = `Cashier: ${cashierName || "biller"}`.padStart(24, " ");
   encoder.bold(true).line(`${tokenStr}${cashierStr}`).bold(false);
+
+  if (isDelivery || deliveryAddress || driverName) {
+    if (driverName) {
+      encoder.bold(true).line(`Rider: ${driverName}`).bold(false);
+    }
+    if (deliveryPaymentType) {
+      const payText = deliveryPaymentType === "PAID" ? "PREPAID (PAID)" : `COD (COLLECT: Rs. ${totalAmount.toFixed(2)})`;
+      encoder.bold(true).line(`Payment: ${payText}`).bold(false);
+    }
+    if (deliveryAddress) {
+      encoder.bold(true).line("Delivery Address:").bold(false);
+      wrapWords(deliveryAddress, 44).forEach((l) => encoder.line(`  ${l}`));
+    }
+  }
 
   if (billNote) {
     encoder.bold(true).line(`Note: ${billNote}`).bold(false);
