@@ -50,6 +50,16 @@ import {
 } from "@/lib/bluetooth-printer";
 import { connectUsbPrinter, sendEscPosToUsb } from "@/lib/usb-printer";
 
+function getWebsiteBaseUrl() {
+  if (typeof window !== "undefined") {
+    if (window.location.hostname.includes("bombayfalooda.com")) {
+      return "https://bombayfalooda.com";
+    }
+    return `${window.location.protocol}//${window.location.hostname}:3003`;
+  }
+  return process.env.NEXT_PUBLIC_WEBSITE_URL || "https://bombayfalooda.com";
+}
+
 type CartLine = {
   localId: string;
   itemId: string;
@@ -794,8 +804,8 @@ export default function PosTerminalPage() {
           driverPhone: assignedDriverPhone,
           paymentType: deliveryPaymentType,
           total: payableTotal,
-          customerTrackingUrl: `http://localhost:3003/track/${finalizedBill.id}`,
-          driverNavUrl: `http://localhost:3003/delivery-nav/${finalizedBill.id}`,
+          customerTrackingUrl: `${getWebsiteBaseUrl()}/track/${finalizedBill.id}`,
+          driverNavUrl: `${getWebsiteBaseUrl()}/delivery-nav/${finalizedBill.id}`,
         });
         setShowDeliveryAssignModal(false);
         setShowDeliveryLinksModal(true);
@@ -2360,7 +2370,7 @@ export default function PosTerminalPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        const url = `http://localhost:3003/track/${d.id}`;
+                        const url = `${getWebsiteBaseUrl()}/track/${d.id}`;
                         navigator.clipboard.writeText(url);
                         setMessage("Customer tracking link copied!");
                       }}
@@ -2371,7 +2381,7 @@ export default function PosTerminalPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        const url = `http://localhost:3003/delivery-nav/${d.id}`;
+                        const url = `${getWebsiteBaseUrl()}/delivery-nav/${d.id}`;
                         navigator.clipboard.writeText(url);
                         setMessage("Rider navigation link copied!");
                       }}
